@@ -6,18 +6,27 @@
   <meta name="keywords" content=" RBAC ">
   <meta name="description" content="K8s之RBAC | Hexo">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-<meta name="description" content="参考：https:&#x2F;&#x2F;blog.csdn.net&#x2F;SHELLCODE_8BIT&#x2F;article&#x2F;details&#x2F;122359419 文件系统调式类文件系统主要使用了DebugFS 和tracefsDebugFS https:&#x2F;&#x2F;blog.csdn.net&#x2F;wangyijieonline&#x2F;article&#x2F;details&#x2F;88786988关于系统有哪些挂载的文件系统可以参考readMounts()函数">
+<meta name="description" content="RBACBAC模型(Role-Based Access Control:基于角色的访问控制)，k8s集群中的身份有两种：用户（User）和服务账号（Service Account），其中service account是k8s为pod内部的进程访问apiserver创建的一种用户。我们可以通过sa中的token与apierver进行通信，也可以基于用户的kubeconfig与apierver进行通信">
 <meta property="og:type" content="article">
-<meta property="og:title" content="Capsule8分析 (一)">
-<meta property="og:url" content="http://example.com/2024/10/05/ecaplute8/index.html">
+<meta property="og:title" content="K8s之RBAC">
+<meta property="og:url" content="http://example.com/2024/10/05/RBAC/index.html">
 <meta property="og:site_name" content="Hexo">
-<meta property="og:description" content="参考：https:&#x2F;&#x2F;blog.csdn.net&#x2F;SHELLCODE_8BIT&#x2F;article&#x2F;details&#x2F;122359419 文件系统调式类文件系统主要使用了DebugFS 和tracefsDebugFS https:&#x2F;&#x2F;blog.csdn.net&#x2F;wangyijieonline&#x2F;article&#x2F;details&#x2F;88786988关于系统有哪些挂载的文件系统可以参考readMounts()函数">
+<meta property="og:description" content="RBACBAC模型(Role-Based Access Control:基于角色的访问控制)，k8s集群中的身份有两种：用户（User）和服务账号（Service Account），其中service account是k8s为pod内部的进程访问apiserver创建的一种用户。我们可以通过sa中的token与apierver进行通信，也可以基于用户的kubeconfig与apierver进行通信">
 <meta property="og:locale" content="en_US">
-<meta property="article:published_time" content="2024-10-05T13:49:22.367Z">
-<meta property="article:modified_time" content="2024-10-05T13:54:54.385Z">
+<meta property="og:image" content="https://prefect12.oss-cn-beijing.aliyuncs.com/11.png">
+<meta property="og:image" content="https://prefect12.oss-cn-beijing.aliyuncs.com/AFCB03E0-BB72-46f2-B417-FB0B7E3406AF.png">
+<meta property="og:image" content="https://prefect12.oss-cn-beijing.aliyuncs.com/2.png">
+<meta property="og:image" content="https://prefect12.oss-cn-beijing.aliyuncs.com/4.png">
+<meta property="og:image" content="https://prefect12.oss-cn-beijing.aliyuncs.com/5.png">
+<meta property="og:image" content="https://prefect12.oss-cn-beijing.aliyuncs.com/7.png">
+<meta property="og:image" content="https://prefect12.oss-cn-beijing.aliyuncs.com/8.png?Expires=1676567430&OSSAccessKeyId=TMP.3Kk4pSrSmBFm96NfgY6GZKm1qhse1DffMaig8NhGPYR9RcQ4j74QAFhCvmGWDyXkr2E7wtHv71FS2rrVZhzZTQXAJUXuCo&Signature=iOG9FI4viDa8002eio23AIw0dw0=">
+<meta property="og:image" content="https://prefect12.oss-cn-beijing.aliyuncs.com/9.png">
+<meta property="article:published_time" content="2024-10-05T13:49:22.377Z">
+<meta property="article:modified_time" content="2024-10-05T13:55:57.302Z">
 <meta property="article:author" content="John Doeas">
-<meta property="article:tag" content="Capsule8">
+<meta property="article:tag" content="RBAC">
 <meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://prefect12.oss-cn-beijing.aliyuncs.com/11.png">
 
 
 <link rel="icon" href="/img/avatar.jpg">
