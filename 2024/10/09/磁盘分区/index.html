@@ -2,9 +2,9 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Capsule8分析 (一) | Hexo</title>
-  <meta name="keywords" content=" Capsule8 ">
-  <meta name="description" content="Capsule8分析 (一) | Hexo">
+  <title>磁盘挂载分区 | Hexo</title>
+  <meta name="keywords" content=" linux命令 ">
+  <meta name="description" content="磁盘挂载分区 | Hexo">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 <meta name="description" content="在申请机器时，初始机器当时申请的磁盘大小与实际不符，通过观察是申请的硬盘需要手动挂载，于是了解下这方面东西  可以看到根目录挂载的空间大小为50G，但我申请的是100G，还有50G空余没利用。 先lsblk 查看下当前分区信息  把空余的分区空间利用起来fdisk &#x2F;dev&#x2F;sda 搞个新分区  mkfs.ext4 &#x2F;dev&#x2F;sda3 格式化新分区mount">
 <meta property="og:type" content="article">
@@ -300,9 +300,9 @@
 </aside>
 <div id="post">
     <div class="pjax">
-        <article id="post-ecaplute8" class="article article-type-post" itemscope itemprop="blogPost">
+        <article id="post-磁盘分区" class="article article-type-post" itemscope itemprop="blogPost">
     
-        <h1 class="article-title">Capsule8分析 (一)</h1>
+        <h1 class="article-title">磁盘挂载分区</h1>
     
     <div class="article-meta">
         
@@ -312,9 +312,7 @@
             <i class="iconfont icon-category"></i>
             
             
-            <a  data-rel="主机安全">主机安全</a> > 
-            
-            <a  data-rel="主机安全&lt;---&gt;Capsule8">Capsule8</a>
+            <a  data-rel="linux运维">linux运维</a>
             
         </span>
         
@@ -322,14 +320,14 @@
         <span class="tag">
             <i class="iconfont icon-tag"></i>
             
-            <a class="color4">Capsule8</a>
+            <a class="color3">linux命令</a>
             
         </span>
         
     </div>
     <div class="article-meta">
         
-            Created At : <time class="date" title='Updated At: 2024-10-05 21:54:54'>2024-10-05 21:49</time>
+            Created At : <time class="date" title='Updated At: 2024-10-09 13:55:11'>2024-10-09 11:56</time>
         
     </div>
     <div class="article-meta">
@@ -351,7 +349,7 @@
     
     <div class="toc-ref">
     
-        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F"><span class="toc-text">文件系统</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%8F%8D%E5%BC%B9shell%E7%9A%84%E6%A3%80%E6%B5%8B"><span class="toc-text">反弹shell的检测</span></a></li></ol>
+        
     
 <style>
     .left-col .switch-btn,
@@ -367,11 +365,15 @@
     
     <div class="article-entry" itemprop="articleBody">
       
-        <p>参考：<a target="_blank" rel="noopener" href="https://blog.csdn.net/SHELLCODE_8BIT/article/details/122359419">https://blog.csdn.net/SHELLCODE_8BIT/article/details/122359419</a></p>
-<h1 id="文件系统"><a href="#文件系统" class="headerlink" title="文件系统"></a>文件系统</h1><p>调式类文件系统主要使用了<br>DebugFS 和tracefs<br>DebugFS <a target="_blank" rel="noopener" href="https://blog.csdn.net/wangyijieonline/article/details/88786988">https://blog.csdn.net/wangyijieonline/article/details/88786988</a><br>关于系统有哪些挂载的文件系统可以参考<br>readMounts()函数实现，主要是读取”self&#x2F;mountinfo”<br>tracepoint观测点<br><a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/143320517">https://zhuanlan.zhihu.com/p/143320517</a></p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">registerProcessEvents--》&quot;sched/sched_process_fork&quot; / &quot;sched/sched_process_exec&quot;</span><br><span class="line">registerFileEvents--》&quot;fs/do_sys_open</span><br><span class="line">registerSyscallEvents--》&quot;raw_syscalls/sys_enter&quot;</span><br></pre></td></tr></table></figure>
-
-<h1 id="反弹shell的检测"><a href="#反弹shell的检测" class="headerlink" title="反弹shell的检测"></a>反弹shell的检测</h1><p>由于监控事件有些多咱们现针对反弹shell来了解Capsule8。<br>参考：<a target="_blank" rel="noopener" href="https://cloud.tencent.com/developer/news/337625">https://cloud.tencent.com/developer/news/337625</a><br>方法一：通过netlink监听proc_events的新事件息</p>
+        <p>在申请机器时，初始机器当时申请的磁盘大小与实际不符，通过观察是申请的硬盘需要手动挂载，于是了解下这方面东西</p>
+<p><img src="https://i-blog.csdnimg.cn/direct/132adbf626a746e1b00682dd424915b0.png" alt="在这里插入图片描述"></p>
+<p>可以看到根目录挂载的空间大小为50G，但我申请的是100G，还有50G空余没利用。</p>
+<p>先lsblk 查看下当前分区信息</p>
+<p><img src="https://i-blog.csdnimg.cn/direct/9ebb3e4f50d14911864944420704e553.png" alt="在这里插入图片描述"></p>
+<p>把空余的分区空间利用起来<br>fdisk &#x2F;dev&#x2F;sda 搞个新分区</p>
+<p><img src="https://i-blog.csdnimg.cn/direct/0b019f55f0954044b30f4a5366636bfe.png" alt="在这里插入图片描述"></p>
+<p>mkfs.ext4 &#x2F;dev&#x2F;sda3 格式化新分区<br>mount &#x2F;dev&#x2F;sda3 &#x2F;home 挂在到某个目录</p>
+<p>2。直接分区扩容<br>parted &#x2F;dev&#x2F;sda<br>(parted) print<br>(parted) resizepart 2 100%<br>(parted) quit<br>resize2fs &#x2F;dev&#x2F;sda2</p>
 
       
        <hr><span style="font-style: italic;color: gray;"> 转载请注明来源. </span>

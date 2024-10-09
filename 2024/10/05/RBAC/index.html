@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>K8s之RBAC | Hexo</title>
+  <meta name="keywords" content=" RBAC ">
+  <meta name="description" content="K8s之RBAC | Hexo">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="description" content="在申请机器时，初始机器当时申请的磁盘大小与实际不符，通过观察是申请的硬盘需要手动挂载，于是了解下这方面东西  可以看到根目录挂载的空间大小为50G，但我申请的是100G，还有50G空余没利用。 先lsblk 查看下当前分区信息  把空余的分区空间利用起来fdisk &#x2F;dev&#x2F;sda 搞个新分区  mkfs.ext4 &#x2F;dev&#x2F;sda3 格式化新分区mount">
+<meta property="og:type" content="article">
+<meta property="og:title" content="磁盘挂载分区">
+<meta property="og:url" content="http://example.com/2024/10/09/%E7%A3%81%E7%9B%98%E5%88%86%E5%8C%BA/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="在申请机器时，初始机器当时申请的磁盘大小与实际不符，通过观察是申请的硬盘需要手动挂载，于是了解下这方面东西  可以看到根目录挂载的空间大小为50G，但我申请的是100G，还有50G空余没利用。 先lsblk 查看下当前分区信息  把空余的分区空间利用起来fdisk &#x2F;dev&#x2F;sda 搞个新分区  mkfs.ext4 &#x2F;dev&#x2F;sda3 格式化新分区mount">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://i-blog.csdnimg.cn/direct/132adbf626a746e1b00682dd424915b0.png">
+<meta property="og:image" content="https://i-blog.csdnimg.cn/direct/9ebb3e4f50d14911864944420704e553.png">
+<meta property="og:image" content="https://i-blog.csdnimg.cn/direct/0b019f55f0954044b30f4a5366636bfe.png">
+<meta property="article:published_time" content="2024-10-09T03:56:07.454Z">
+<meta property="article:modified_time" content="2024-10-09T05:55:11.433Z">
+<meta property="article:author" content="hatjwe">
+<meta property="article:tag" content="linux命令">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://i-blog.csdnimg.cn/direct/132adbf626a746e1b00682dd424915b0.png">
+
+
+<link rel="icon" href="/img/avatar.jpg">
+
+<link href="/css/style.css?v=1.1.0" rel="stylesheet">
+
+<link href="/css/hl_theme/atom-light.css?v=1.1.0" rel="stylesheet">
+
+<link href="//cdn.jsdelivr.net/npm/animate.css@4.1.0/animate.min.css" rel="stylesheet">
+
+<script src="//cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js"></script>
+<script src="/js/titleTip.js?v=1.1.0" ></script>
+
+<script src="//cdn.jsdelivr.net/npm/highlightjs@9.16.2/highlight.pack.min.js"></script>
+<script>
+    hljs.initHighlightingOnLoad();
+</script>
+
+<script src="//cdn.jsdelivr.net/npm/nprogress@0.2.0/nprogress.min.js"></script>
+
+
+
+<script src="//cdn.jsdelivr.net/npm/jquery.cookie@1.4.1/jquery.cookie.min.js" ></script>
+
+<script src="/js/iconfont.js?v=1.1.0" ></script>
+
+<meta name="generator" content="Hexo 7.3.0"></head>
+<div style="display: none">
+  <input class="theme_disqus_on" value="false">
+  <input class="theme_preload_comment" value="">
+  <input class="theme_blog_path" value="">
+  <input id="theme_shortcut" value="true" />
+  <input id="theme_highlight_on" value="true" />
+  <input id="theme_code_copy" value="true" />
+</div>
+
+
+
+<body>
+<aside class="nav">
+    <div class="nav-left">
+        <a href="/"
+   class="avatar_target">
+    <img class="avatar"
+         src="/img/avatar.jpg"/>
+</a>
+<div class="author">
+    <span>hatjwe</span>
+</div>
+
+<div class="icon">
+    
+</div>
+
+
+
+
+
+<ul>
+    <li>
+        <div class="all active" data-rel="All">All
+            
+                <small>(3)</small>
+            
+        </div>
+    </li>
+    
+        
+            
+                
+    <li>
+        <div data-rel="云原生">
+            <i class="fold iconfont icon-right"></i>
+            云原生
+            <small>(1)</small>
+        </div>
+        
+            <ul class="sub hide">
+                
+                    
+    <li>
+        <div data-rel="云原生&lt;---&gt;RBAC">
+            
+            RBAC
+            <small>(1)</small>
+        </div>
+        
+    </li>
+
+                
+            </ul>
+        
+    </li>
+
+            
+        
+    
+        
+            
+                
+    <li>
+        <div data-rel="主机安全">
+            <i class="fold iconfont icon-right"></i>
+            主机安全
+            <small>(1)</small>
+        </div>
+        
+            <ul class="sub hide">
+                
+                    
+    <li>
+        <div data-rel="主机安全&lt;---&gt;Capsule8">
+            
+            Capsule8
+            <small>(1)</small>
+        </div>
+        
+    </li>
+
+                
+            </ul>
+        
+    </li>
+
+            
+        
+    
+        
+            
+        
+    
+        
+            
+                
+    <li>
+        <div data-rel="linux运维">
+            
+            linux运维
+            <small>(1)</small>
+        </div>
+        
+    </li>
+
+            
+        
+    
+        
+            
+        
+    
+</ul>
+<div class="left-bottom">
+    <div class="menus">
+        
+            
+            
+            
+    </div>
+    <div>
+        
+            <a class="about  hasFriend  site_url"
+               
+               href="/about">About</a>
+        
+        <a style="width: 50%"
+                
+                                           class="friends">Friends</a>
+        
+    </div>
+</div>
+<input type="hidden" id="yelog_site_posts_number" value="3">
+
+<div style="display: none">
+    <span id="busuanzi_value_site_uv"></span>
+    <span id="busuanzi_value_site_pv"></span>
+</div>
+
+    </div>
+    <div class="nav-right">
+        <div class="friends-area">
+    <div class="friends-title">
+        Links
+        <i class="iconfont icon-left"></i>
+    </div>
+    <div class="friends-content">
+        <ul>
+            
+        </ul>
+    </div>
+</div>
+        <div class="title-list">
+    <div class="right-top">
+        <div id="default-panel">
+            <i class="iconfont icon-search" data-title="search shortcut key i"></i>
+            <div class="right-title">All</div>
+            <i class="iconfont icon-file-tree" data-title="switch to outline view shortcut key w"></i>
+        </div>
+        <div id="search-panel">
+            <i class="iconfont icon-left" data-title="return"></i>
+            <input id="local-search-input" autocomplete="off"/>
+            <label class="border-line" for="input"></label>
+            <i class="iconfont icon-case-sensitive" data-title="case sensitive"></i>
+            <i class="iconfont icon-tag" data-title="label"></i>
+        </div>
+        <div id="outline-panel" style="display: none">
+            <div class="right-title">outline</div>
+            <i class="iconfont icon-list" data-title="switch to article list"></i>
+        </div>
+    </div>
+
+    <div class="tags-list">
+    <input id="tag-search" />
+    <div class="tag-wrapper">
+        
+            <li class="article-tag-list-item">
+                <i class="iconfont icon-tag"></i><a>Capsule8</a>
+            </li>
+        
+            <li class="article-tag-list-item">
+                <i class="iconfont icon-tag"></i><a>linux命令</a>
+            </li>
+        
+            <li class="article-tag-list-item">
+                <i class="iconfont icon-tag"></i><a>RBAC</a>
+            </li>
+        
+    </div>
+
+</div>
+
+    
+    <nav id="title-list-nav">
+        
+        
+        <a  class="All linux运维 "
+           href="/2024/10/09/%E7%A3%81%E7%9B%98%E5%88%86%E5%8C%BA/"
+           data-tag="linux命令"
+           data-author="" >
+            <span class="post-title" title="磁盘挂载分区">磁盘挂载分区</span>
+            <span class="post-date" title="2024-10-09 11:56:07">2024/10/09</span>
+        </a>
+        
+        
+        <a  class="All 云原生 RBAC "
+           href="/2024/10/05/RBAC/"
+           data-tag="RBAC"
+           data-author="" >
+            <span class="post-title" title="K8s之RBAC">K8s之RBAC</span>
+            <span class="post-date" title="2024-10-05 21:49:22">2024/10/05</span>
+        </a>
+        
+        
+        <a  class="All 主机安全 Capsule8 "
+           href="/2024/10/05/ecaplute8/"
+           data-tag="Capsule8"
+           data-author="" >
+            <span class="post-title" title="Capsule8分析 (一)">Capsule8分析 (一)</span>
+            <span class="post-date" title="2024-10-05 21:49:22">2024/10/05</span>
+        </a>
+        
+        <div id="no-item-tips">
+
+        </div>
+    </nav>
+    <div id="outline-list">
+    </div>
+</div>
+
+    </div>
+    <div class="hide-list">
+        <div class="semicircle" data-title="Toggle full screen shortcut key s">
+            <div class="brackets first"><</div>
+            <div class="brackets">&gt;</div>
+        </div>
+    </div>
+</aside>
+<div id="post">
+    <div class="pjax">
+        <article id="post-RBAC" class="article article-type-post" itemscope itemprop="blogPost">
+    
+        <h1 class="article-title">K8s之RBAC</h1>
+    
+    <div class="article-meta">
+        
+        
+        
+        <span class="book">
+            <i class="iconfont icon-category"></i>
+            
+            
+            <a  data-rel="云原生">云原生</a> > 
+            
+            <a  data-rel="云原生&lt;---&gt;RBAC">RBAC</a>
+            
+        </span>
+        
+        
+        <span class="tag">
+            <i class="iconfont icon-tag"></i>
+            
+            <a class="color5">RBAC</a>
+            
+        </span>
+        
+    </div>
+    <div class="article-meta">
+        
+            Created At : <time class="date" title='Updated At: 2024-10-05 21:55:57'>2024-10-05 21:49</time>
+        
+    </div>
+    <div class="article-meta">
+        
+        
+        <span id="busuanzi_container_page_pv">
+            Views 👀 :<span id="busuanzi_value_page_pv">
+                <span class="count-comment">
+                    <span class="spinner">
+                      <div class="cube1"></div>
+                      <div class="cube2"></div>
+                    </span>
+                </span>
+            </span>
+        </span>
+        
+        
+    </div>
+    
+    <div class="toc-ref">
+    
+        <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#RBAC"><span class="toc-text">RBAC</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%94%A8%E6%88%B7user"><span class="toc-text">用户user</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%88%9B%E5%BB%BA%E7%94%A8%E6%88%B7"><span class="toc-text">创建用户</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%88%9B%E5%BB%BA-CertificateSigningRequest"><span class="toc-text">创建 CertificateSigningRequest</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%8F%96%E5%BE%97%E8%AF%81%E4%B9%A6"><span class="toc-text">取得证书</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E6%B7%BB%E5%8A%A0%E5%88%B0-kubeconfig"><span class="toc-text">添加到 kubeconfig</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#RBAC%E6%9D%A5%E5%88%86%E9%85%8D%E6%9D%83%E9%99%90"><span class="toc-text">RBAC来分配权限</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%88%9B%E5%BB%BA%E8%A7%92%E8%89%B2Role%E5%92%8CClusterRole"><span class="toc-text">创建角色Role和ClusterRole</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#RoleBinding-%E5%92%8C-ClusterRoleBinding"><span class="toc-text">RoleBinding 和 ClusterRoleBinding</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%9D%83%E9%99%90%E5%88%92%E5%88%86"><span class="toc-text">权限划分</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E6%89%8B%E5%8A%A8%E5%88%9B%E5%BB%BA%E8%AF%81%E4%B9%A6%E6%96%B9%E6%B3%95"><span class="toc-text">手动创建证书方法</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%88%9B%E5%BB%BA%E7%94%A8%E6%88%B7server-account"><span class="toc-text">创建用户server account</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E8%A7%92%E8%89%B2role%E5%92%8CroleBinding"><span class="toc-text">角色role和roleBinding</span></a></li></ol></li></ol></li></ol>
+    
+<style>
+    .left-col .switch-btn,
+    .left-col .switch-area {
+        display: none;
+    }
+    .toc-level-3 i,
+    .toc-level-3 ol {
+        display: none !important;
+    }
+</style>
+</div>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h2 id="RBAC"><a href="#RBAC" class="headerlink" title="RBAC"></a>RBAC</h2><p>BAC模型(Role-Based Access Control:基于角色的访问控制)，k8s集群中的身份有两种：用户（User）和服务账号（Service Account），其中service account是k8s为pod内部的进程访问apiserver创建的一种用户。我们可以通过sa中的token与apierver进行通信，也可以基于用户的kubeconfig与apierver进行通信。</p>
+<span id="more"></span>
+
+<p><img src="https://prefect12.oss-cn-beijing.aliyuncs.com/11.png" alt="img"></p>
+<h3 id="用户user"><a href="#用户user" class="headerlink" title="用户user"></a>用户user</h3><p>对于User账户，主要分为系统管理员账户和普通账户，系统管理员账户为创造集群时自带，权限很高，普通账户也是由系统管理员账户创建并赋予期对应的访问操作权限。</p>
+<h3 id="创建用户"><a href="#创建用户" class="headerlink" title="创建用户"></a>创建用户</h3><p>对于User账户，我们可以通过创建k8s集群时自带的证书对我们（admin）权限（几乎）手动管理master中的凭证文件，并且将每个凭证文件和一个字符串对应起来，只要用户请求中有信息（一般来自本地保存的.kube&#x2F;config文件中）能够证明自己有任意一个凭证文件的授权，那么这个请求就被认为是一个合法用户发出的，同时，在证书中还可以加入用户所在的组（group）的信息，k8s可以据此认为user在一个组中或者后期通过rolebinding等赋予操作权限。</p>
+<p><img src="https://prefect12.oss-cn-beijing.aliyuncs.com/AFCB03E0-BB72-46f2-B417-FB0B7E3406AF.png" alt="img"><br>通过CSR创建为例，（参考官方文档<a target="_blank" rel="noopener" href="https://kubernetes.io/zh-cn/docs/reference/access-authn-authz/certificate-signing-requests%EF%BC%89">https://kubernetes.io/zh-cn/docs/reference/access-authn-authz/certificate-signing-requests）</a></p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">1.</span>生成一个 <span class="number">2048</span> 位的 morece.key 文件</span><br><span class="line">openssl genrsa -out morece.key <span class="number">2048</span></span><br><span class="line"><span class="number">2.</span>在 morece.key 文件的基础上，生成 morece.crt 文件（用参数 -days 设置证书有效期）</span><br><span class="line">这里注意两个字段Common Name输入的是用户名。</span><br><span class="line">Organization Name 是用户组，如果写system:masters则归属于系统组获取系统管理权限，这块可以写一个新的，后边我们通过role或clusterrole来限制账号的权限。</span><br><span class="line">openssl req -<span class="built_in">new</span> -key morece.key -out morece.csr</span><br></pre></td></tr></table></figure>
+
+
+
+<p><img src="https://prefect12.oss-cn-beijing.aliyuncs.com/2.png" alt="img"></p>
+<h4 id="创建-CertificateSigningRequest"><a href="#创建-CertificateSigningRequest" class="headerlink" title="创建 CertificateSigningRequest"></a>创建 CertificateSigningRequest</h4><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">  cat &lt;&lt;EOF | kubectl apply -f -</span><br><span class="line">apiVersion: certificates.k8s.io/v1</span><br><span class="line">kind: CertificateSigningRequest</span><br><span class="line">metadata:</span><br><span class="line">  name: morece</span><br><span class="line">spec:</span><br><span class="line">  request: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURSBSRVFVRVNULS0tLS0KTUlJQ2p6Q0NBWGNDQVFBd1NqRUxNQWtHQTFVRUJoTUNRMDR4RlRBVEJnTlZCQWNNREVSbFptRjFiSFFnUTJsMAplVEVUTUJFR0ExVUVDZ3dLYTNWaVpYSnVaWFJsY3pFUE1BMEdBMVVFQXd3R2JXOXlaV05sTUlJQklqQU5CZ2txCmhraUc5dzBCQVFFRkFBT0NBUThBTUlJQkNnS0NBUUVBd2hwOFh6Q2NLL2RJb1Y2aXJ0ZnVyeDN4MGU5Z1Z3Y1IKalNpUG1UVkcvc1ltUmhDbmd0djhOWldlanNjN2dDU1g2OEhDbW9kTk0yOGFYc3d0QnpnU2xQZk5HLytRZHUrVgpCQXF3YUtGS0xSeS9JQ2hON2hBaHo3MzNacFRDYTdlbktxUjlMZ285S1pwV2EzUFh1em4rZVZKNnpFTlpkN0FKCldzbVZ4MWZwejVLVmxWZXVQbUk3aW1JMHp5T29CVUVGVXB0ZStyTWlMMFRZTEpidmdab3ZZeXMwcTd2bCtpVm4KTkdzUkZ2RmY4eWVvUE5jS0pVWHZLWkp0TDRqaWJaUnptNitFd1RwR0tPbGw1b0JVUzhxdDdIb3VoaE92NmZlcgp1SGdwQ1RCbSsxbW9wTnUzMklZbmd6U1ZWUlFKR1FxbEVqRkFtQUNrVmNyOGU1L2hQMTBGWndJREFRQUJvQUF3CkRRWUpLb1pJaHZjTkFRRUxCUUFEZ2dFQkFIZW1jcVhEVFo0bnc0OUovdGRDRlJzYU4zMkdhT0J0aVo0alVQVE8KZGhRUjN5MDliQk1IYmJiSktjMCtlMnJGcll4aUFmMS8yV00rTmI3U1VhNGQzSWZFYlY2VzJuY1c3MTljTWFqZAovbjFPVVJzTWNuaUpRWGlwS3ZFUXpETzlJMmRQSHI2emNjOFBsVnJheXVsait6MlNuUE5HVzJwSzBUdWkzSTFCCkhEOXdBbWluNHlYWXlsK2p5dDFuV3Fsd05teWpqbVNYL2pwYmRsSldiYlRXT1RoMkczT1g5M0ltTW8vUUtnVXkKenJhQTB4RFJZS0dPSGlZOEVRL1RITWtyTGpDdi8raDdZZ1pWYTBIZ3hoczNCTmVvS2JTYTBsb01iRnhCNFl0eAo4TEdaa1Rtc0JsVUFhU3RmVFhQa0lnUVBlR3IrTFMzY2RTbjVEaUhRNVBzZmw1OD0KLS0tLS1FTkQgQ0VSVElGSUNBVEUgUkVRVUVTVC0tLS0tCg==</span><br><span class="line">  signerName: kubernetes.io/kube-apiserver-client</span><br><span class="line">  expirationSeconds: <span class="number">86400</span>  # one day</span><br><span class="line">  usages:</span><br><span class="line">  - client auth</span><br><span class="line">EOF</span><br></pre></td></tr></table></figure>
+<ul>
+<li><p><code>usage</code> 字段必须是 ‘<code>client auth</code>‘</p>
+</li>
+<li><p><code>expirationSeconds</code> 可以设置为更长（例如 <code>864000</code> 是十天）或者更短（例如 <code>3600</code> 是一个小时）</p>
+</li>
+<li><p><code>request</code> 字段是 CSR 文件内容的 base64 编码值。 要得到该值，可以执行命令</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">cat morece.csr | base64 | tr -d <span class="string">&quot;\n&quot;</span></span><br></pre></td></tr></table></figure>
+
+<p>批准证书kubectl certificate approve morece</p>
+</li>
+</ul>
+<h4 id="取得证书"><a href="#取得证书" class="headerlink" title="取得证书"></a>取得证书</h4><p>从 CSR 取得证书：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">kubectl get csr/morece -o yaml</span><br></pre></td></tr></table></figure>
+
+<p>证书的内容使用 base64 编码，存放在字段 <code>status.certificate</code>。</p>
+<p>从 CertificateSigningRequest 导出颁发的证书。</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">kubectl get csr morece -o jsonpath=&#x27;&#123;.status.certificate&#125;&#x27;| base64 -d &gt; morece.crt</span><br></pre></td></tr></table></figure>
+
+<h4 id="添加到-kubeconfig"><a href="#添加到-kubeconfig" class="headerlink" title="添加到 kubeconfig"></a>添加到 kubeconfig</h4><p>最后一步是将这个用户添加到 kubeconfig 文件。</p>
+<p>首先，你需要添加新的凭据：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">kubectl config set-credentials morece --client-key=morece.key --client-certificate=morece.crt --embed-certs=true</span><br></pre></td></tr></table></figure>
+
+<p>然后，你需要添加上下文：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">kubectl config set-context morece --cluster=kubernetes --user=morece</span><br></pre></td></tr></table></figure>
+<p>这里也推荐个工具看用户,切换context很方便<a target="_blank" rel="noopener" href="https://github.com/sunny0826/kubecm.git">https://github.com/sunny0826/kubecm.git</a></p>
+<p><img src="https://prefect12.oss-cn-beijing.aliyuncs.com/4.png" alt="img"><br>来测试一下，把上下文切换为 <code> morece</code>：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">kubectl config use-context morece</span><br></pre></td></tr></table></figure>
+
+<p>这里可以看到报错了，错误原因是more测用户并没有权限去访问default空间下的pod，这时候就要引入RBAC来分配权限了</p>
+<h4 id="RBAC来分配权限"><a href="#RBAC来分配权限" class="headerlink" title="RBAC来分配权限"></a>RBAC来分配权限</h4><p>RBAC API 声明了四种 Kubernetes 对象：<strong>Role</strong>、<strong>ClusterRole</strong>、<strong>RoleBinding</strong> 和 <strong>ClusterRoleBinding</strong>。</p>
+<h3 id="创建角色Role和ClusterRole"><a href="#创建角色Role和ClusterRole" class="headerlink" title="创建角色Role和ClusterRole"></a>创建角色Role和ClusterRole</h3><p>Role 总是用来在某个<a target="_blank" rel="noopener" href="https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/namespaces/">名字空间</a>内设置访问权限； 在你创建 Role 时，你必须指定该 Role 所属的名字空间。</p>
+<p>与之相对，ClusterRole 则是一个集群作用域的资源</p>
+<p>接下来创建个读取default pod的权限(注意要切换为管理员context再进行资源创建)</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">apiVersion: rbac.authorization.k8s.io/v1</span><br><span class="line">kind: Role</span><br><span class="line">metadata:</span><br><span class="line">  namespace: <span class="keyword">default</span></span><br><span class="line">  name: morecepod-reader</span><br><span class="line">rules:</span><br><span class="line">- apiGroups: [<span class="string">&quot;&quot;</span>] # <span class="string">&quot;&quot;</span> 标明 core API 组</span><br><span class="line">  resources: [<span class="string">&quot;pods&quot;</span>]</span><br><span class="line">  verbs: [<span class="string">&quot;get&quot;</span>, <span class="string">&quot;watch&quot;</span>, <span class="string">&quot;list&quot;</span>]<span class="comment">//允许的操作行为</span></span><br><span class="line"><span class="comment">//get和list区别在于如果是get可以查看详情kubectl describe这在secret时获取详情中的token很好用，list只能获取列表不能查看详情</span></span><br></pre></td></tr></table></figure>
+<h4 id="RoleBinding-和-ClusterRoleBinding"><a href="#RoleBinding-和-ClusterRoleBinding" class="headerlink" title="RoleBinding 和 ClusterRoleBinding"></a><strong>RoleBinding</strong> 和 <strong>ClusterRoleBinding</strong></h4><p>简单来说<strong>RoleBinding</strong> 和 <strong>ClusterRoleBinding</strong>就是将Role和ClusterRole规则作用效果绑定到用户或serveraccount，使其拥有与Role和ClusterRole一样的权限。</p>
+<p>一个 RoleBinding 可以引用同一的名字空间中的任何 Role。 或者，一个 RoleBinding 可以引用某 ClusterRole 并将该 ClusterRole 绑定到 RoleBinding 所在的名字空间。 如果你希望将某 ClusterRole 绑定到集群中所有名字空间，你要使用 ClusterRoleBinding。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">apiVersion: rbac.authorization.k8s.io/v1</span><br><span class="line"># 此角色绑定允许 <span class="string">&quot;jane&quot;</span> 读取 <span class="string">&quot;default&quot;</span> 名字空间中的 Pod</span><br><span class="line"># 你需要在该命名空间中有一个名为 “pod-reader” 的 Role</span><br><span class="line">kind: RoleBinding</span><br><span class="line">metadata:</span><br><span class="line">  name: moreceread-pods</span><br><span class="line">  namespace: <span class="keyword">default</span></span><br><span class="line">subjects:</span><br><span class="line"># 你可以指定不止一个“subject（主体）”</span><br><span class="line">- kind: User</span><br><span class="line">  name: morece # <span class="string">&quot;morece&quot;</span> 是区分大小写的</span><br><span class="line">  apiGroup: rbac.authorization.k8s.io</span><br><span class="line">roleRef:</span><br><span class="line">  # <span class="string">&quot;roleRef&quot;</span> 指定与某 Role 或 ClusterRole 的绑定关系</span><br><span class="line">  kind: Role        # 此字段必须是 Role 或 ClusterRole</span><br><span class="line">  name: morecepod-reader  # 此字段必须与你要绑定的 Role 或 ClusterRole 的名称匹配</span><br><span class="line">  apiGroup: rbac.authorization.k8s.io</span><br></pre></td></tr></table></figure>
+
+<p>然后再把上下文切换为 <code> morece</code>看下default空间下pod可以了：</p>
+<p><img src="https://prefect12.oss-cn-beijing.aliyuncs.com/5.png" alt="img"></p>
+<h3 id="权限划分"><a href="#权限划分" class="headerlink" title="权限划分"></a>权限划分</h3><p>Role和ClusterRole的权限控制主要通过rules下字段<br>apiGroups：设定资源组”” 标明 core API 组，”<em>“ 标明所有组<br>resource内容为常见资源类（crontabs、jobs、pods、pods&#x2F;log、configmaps、deployments等）<br>同时也支持nonResourceURLs通过api url加载<br>nonResourceURLs: [“&#x2F;healthz”, “&#x2F;healthz&#x2F;</em>“] # nonResourceURL 中的 ‘*’ 是一个全局通配符</p>
+<p>verbs主要控制对资源的行为[“get”, “list”, “watch”, “create”, “update”, “patch”, “delete”]</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">apiVersion: rbac.authorization.k8s.io/v1</span><br><span class="line">kind: Role</span><br><span class="line">metadata:</span><br><span class="line">  namespace: <span class="keyword">default</span></span><br><span class="line">  name: morecepod-reader</span><br><span class="line">rules:</span><br><span class="line">- apiGroups: [<span class="string">&quot;&quot;</span>] # <span class="string">&quot;&quot;</span> 标明 core API 组</span><br><span class="line">  resources: [<span class="string">&quot;pods&quot;</span>]</span><br><span class="line">  verbs: [<span class="string">&quot;get&quot;</span>, <span class="string">&quot;watch&quot;</span>, <span class="string">&quot;list&quot;</span>]<span class="comment">//允许的操作行为</span></span><br><span class="line"><span class="comment">//get和list区别在于如果是get可以查看详情kubectl describe这在secret时获取详情中的token很好用，list只能获取列表不能查看详情</span></span><br></pre></td></tr></table></figure>
+
+
+
+<h4 id="手动创建证书方法"><a href="#手动创建证书方法" class="headerlink" title="手动创建证书方法"></a>手动创建证书方法</h4><p>利用手动创建证书创建用户，前面生成密钥部分都相同，但是签名通过利用集群中CA自带的CA证书进行签名即可。详细在<a target="_blank" rel="noopener" href="http://blog.itpub.net/69955379/viewspace-2778141">http://blog.itpub.net/69955379/viewspace-2778141</a></p>
+<h3 id="创建用户server-account"><a href="#创建用户server-account" class="headerlink" title="创建用户server account"></a>创建用户server account</h3><p>服务账号对象主体更多为pod,比如当有pod需要运行时，必须以一个service account的身份去运行他。一个pod不需要区分是那个用户的，只需要对service account权限进行控制即可。</p>
+<p>我们在创建 Pod 时，如果没有指定服务账号，Pod 会被指定给命名空间中的 <code>default</code> 服务账号。</p>
+<h4 id="角色role和roleBinding"><a href="#角色role和roleBinding" class="headerlink" title="角色role和roleBinding"></a>角色role和roleBinding</h4><p>下面我们在namespace为ceshi下创建一个service account,接着在pod中使用这个账户</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">kubectl create serviceaccount morece -n ceshi <span class="comment">//创建sa</span></span><br><span class="line">挂载sa起pod</span><br><span class="line">apiVersion: v1</span><br><span class="line">kind: Pod</span><br><span class="line">metadata:</span><br><span class="line">  name: morecewithsa</span><br><span class="line">  namespace: ceshi</span><br><span class="line">spec:</span><br><span class="line">  serviceAccount: morece</span><br><span class="line">  containers:</span><br><span class="line">    - name: morece</span><br><span class="line">      image: nginx</span><br><span class="line">      imagePullPolicy: IfNotPresent </span><br><span class="line">将kubectl cp进去测试用</span><br><span class="line">kubectl cp /usr/bin/kubectl ceshi/morecewithsa:/</span><br><span class="line">find / -name <span class="string">&quot;*token&quot;</span>找一下pod里挂载的token,也可以直接用kubectl</span><br><span class="line">kubectl get pod</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p><img src="https://prefect12.oss-cn-beijing.aliyuncs.com/7.png" alt="img"></p>
+<p>可以看到我们光是创建一个service account,在pod内是没什么权限的，现在创建个role，通过rolebinding绑定在我们的sa上</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"> cat &lt;&lt;EOF | kubectl apply -f -</span><br><span class="line">apiVersion: rbac.authorization.k8s.io/v1</span><br><span class="line">kind: Role</span><br><span class="line">metadata:</span><br><span class="line">  namespace: ceshi</span><br><span class="line">  name: morecepod-create</span><br><span class="line">rules:</span><br><span class="line">- apiGroups: [<span class="string">&quot;*&quot;</span>]</span><br><span class="line">  # 在 HTTP 层面，用来访问 Secret 资源的名称为 <span class="string">&quot;secrets&quot;</span></span><br><span class="line">  resources: [<span class="string">&quot;secrets&quot;</span>,<span class="string">&quot;pods&quot;</span>,<span class="string">&quot;nodes&quot;</span>,<span class="string">&quot;services&quot;</span>]</span><br><span class="line">  verbs: [<span class="string">&quot;get&quot;</span>, <span class="string">&quot;watch&quot;</span>, <span class="string">&quot;list&quot;</span>,<span class="string">&quot;create&quot;</span>]</span><br><span class="line">EOF</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">cat &lt;&lt;EOF | kubectl apply -f -</span><br><span class="line">apiVersion: rbac.authorization.k8s.io/v1</span><br><span class="line"># 此角色绑定允许 service account 读取 <span class="string">&quot;ceshi&quot;</span> 名字空间中的 Pod</span><br><span class="line"># 你需要在该命名空间中有一个名为 “morecepod-create” 的 Role</span><br><span class="line">kind: RoleBinding</span><br><span class="line">metadata:</span><br><span class="line">  name: morececreate-pods</span><br><span class="line">  namespace: ceshi</span><br><span class="line">subjects:</span><br><span class="line"># 你可以指定不止一个“subject（主体）”</span><br><span class="line">- kind: ServiceAccount</span><br><span class="line">  name: morece # <span class="string">&quot;morece&quot;</span> 是区分大小写的</span><br><span class="line">roleRef:</span><br><span class="line">  # <span class="string">&quot;roleRef&quot;</span> 指定与某 Role 或 ClusterRole 的绑定关系</span><br><span class="line">  kind: Role        # 此字段必须是 Role 或 ClusterRole</span><br><span class="line">  name: morecepod-create  # 此字段必须与你要绑定的 Role 或 ClusterRole 的名称匹配</span><br><span class="line">  apiGroup: rbac.authorization.k8s.io</span><br><span class="line">EOF</span><br></pre></td></tr></table></figure>
+
+<p>在里边试试创建个pod,可以了</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">cat &lt;&lt;EOF | ./kubectl apply -f -</span><br><span class="line">apiVersion: v1</span><br><span class="line">kind: Pod</span><br><span class="line">metadata:</span><br><span class="line">  name: createinmorecewithsa</span><br><span class="line">  namespace: ceshi</span><br><span class="line">spec:</span><br><span class="line">  containers:</span><br><span class="line">    - name: createinmorecewithsacon</span><br><span class="line">      image: nginx</span><br><span class="line">      imagePullPolicy: IfNotPresent  </span><br><span class="line">EOF</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://prefect12.oss-cn-beijing.aliyuncs.com/8.png?Expires=1676567430&OSSAccessKeyId=TMP.3Kk4pSrSmBFm96NfgY6GZKm1qhse1DffMaig8NhGPYR9RcQ4j74QAFhCvmGWDyXkr2E7wtHv71FS2rrVZhzZTQXAJUXuCo&Signature=iOG9FI4viDa8002eio23AIw0dw0=" alt="img"></p>
+<p>我们再试试在别的命名空间创建pod，失败了。于是现在创建个clusterrole，通过clusterrolebinding绑定在我们的sa上</p>
+<p><img src="https://prefect12.oss-cn-beijing.aliyuncs.com/9.png" alt="img"></p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line">  cat &lt;&lt;EOF | kubectl apply -f -</span><br><span class="line">apiVersion: rbac.authorization.k8s.io/v1</span><br><span class="line">kind: ClusterRole</span><br><span class="line">metadata:</span><br><span class="line">  # <span class="string">&quot;namespace&quot;</span> 被忽略，因为 ClusterRoles 不受名字空间限制</span><br><span class="line">  name: pod-create</span><br><span class="line">rules:</span><br><span class="line">- apiGroups: [<span class="string">&quot;*&quot;</span>]</span><br><span class="line">  # 在 HTTP 层面，用来访问 Secret 资源的名称为 <span class="string">&quot;secrets&quot;</span></span><br><span class="line">  resources: [<span class="string">&quot;secrets&quot;</span>,<span class="string">&quot;pods&quot;</span>,<span class="string">&quot;nodes&quot;</span>,<span class="string">&quot;services&quot;</span>]</span><br><span class="line">  verbs: [<span class="string">&quot;get&quot;</span>, <span class="string">&quot;watch&quot;</span>, <span class="string">&quot;list&quot;</span>,<span class="string">&quot;create&quot;</span>]</span><br><span class="line">EOF</span><br><span class="line">  cat &lt;&lt;EOF | kubectl apply -f -</span><br><span class="line">apiVersion: rbac.authorization.k8s.io/v1</span><br><span class="line"># 此集群角色绑定允许 “manager” 组中的任何人访问任何名字空间中的 Secret 资源</span><br><span class="line">kind: ClusterRoleBinding</span><br><span class="line">metadata:</span><br><span class="line">  name: create-pod-glob</span><br><span class="line">subjects:</span><br><span class="line">- kind: ServiceAccount</span><br><span class="line">  namespace: ceshi</span><br><span class="line">  name: morece      # <span class="string">&#x27;name&#x27;</span> 是区分大小写的</span><br><span class="line">roleRef:</span><br><span class="line">  kind: ClusterRole</span><br><span class="line">  name: pod-create</span><br><span class="line">  apiGroup: rbac.authorization.k8s.io</span><br><span class="line">EOF</span><br></pre></td></tr></table></figure>
+
+
+      
+       <hr><span style="font-style: italic;color: gray;"> 转载请注明来源. </span>
+    </div>
+</article>
+
+
+
+
+
+
+
+    
+
+
+
+
+    </div>
+    <div class="copyright">
+        <p class="footer-entry">
+    ©2022-2024
+</p>
+
+
+    </div>
+    <div class="full-toc">
+        <button class="full" data-title="Toggle full screen shortcut key s"><span class="min "></span></button>
+<a class="" id="rocket" ></a>
+
+    </div>
+</div>
+
+</body>
+<script src="/js/jquery.pjax.js?v=1.1.0" ></script>
+
+<script src="/js/script.js?v=1.1.0" ></script>
+<script>
+    var img_resize = 'default';
+    function initArticle() {
+        /*渲染对应的表格样式*/
+        
+            $("#post .pjax table").addClass("green_title");
+        
+
+        /*渲染打赏样式*/
+        
+
+        /*高亮代码块行号*/
+        
+
+        /*访问数量*/
+        
+        $.getScript("//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js");
+        
+
+        /*代码高亮，行号对齐*/
+        $('.pre-numbering').css('line-height',$('.has-numbering').css('line-height'));
+
+        
+        
+    }
+
+    /*打赏页面隐藏与展示*/
+    
+
+</script>
+
+<!--加入行号的高亮代码块样式-->
+
+<!--自定义样式设置-->
+<style>
+    
+    
+    .nav {
+        width: 542px;
+    }
+    .nav.fullscreen {
+        margin-left: -542px;
+    }
+    .nav-left {
+        width: 120px;
+    }
+    
+    
+    @media screen and (max-width: 1468px) {
+        .nav {
+            width: 492px;
+        }
+        .nav.fullscreen {
+            margin-left: -492px;
+        }
+        .nav-left {
+            width: 100px;
+        }
+    }
+    
+    
+    @media screen and (max-width: 1024px) {
+        .nav {
+            width: 492px;
+            margin-left: -492px
+        }
+        .nav.fullscreen {
+            margin-left: 0;
+        }
+    }
+    
+    @media screen and (max-width: 426px) {
+        .nav {
+            width: 100%;
+        }
+        .nav-left {
+            width: 100%;
+        }
+    }
+    
+    
+    .nav-right .title-list nav a .post-title, .nav-right .title-list #local-search-result a .post-title {
+        color: #383636;
+    }
+    
+    
+    .nav-right .title-list nav a .post-date, .nav-right .title-list #local-search-result a .post-date {
+        color: #5e5e5f;
+    }
+    
+    
+    .nav-right nav a.hover, #local-search-result a.hover{
+        background-color: #e2e0e0;
+    }
+    
+    
+
+    /*列表样式*/
+    
+
+    /* 背景图样式 */
+    
+    
+
+
+    /*引用块样式*/
+    
+
+    /*文章列表背景图*/
+    
+
+    
+</style>
+
+
+
+
+
+
+
+</html>
