@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>k8s日志审计调研 | Hexo</title>
+  <meta name="keywords" content=" 日志审计 ">
+  <meta name="description" content="k8s日志审计调研 | Hexo">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="description" content="k8s日志审计调研k8s日志审计k8s组件在容器编排创建删除等过程中都会将行为记录为日志，可以通过日志审计发现某些黑客的敏感行为进行预警 方案详情目前主要形成以下方案，详情及优缺点提供参考（主要推荐:监听收集集群日志+脚本规则处理）     侵入性 优先级    监听收集集群日志+脚本规则处理 无 2   WEBhook，apiserver行为验证  3   kube-apiserver配置yam">
+<meta property="og:type" content="article">
+<meta property="og:title" content="k8s日志审计调研">
+<meta property="og:url" content="http://example.com/2024/10/12/K8s%E6%97%A5%E5%BF%97%E5%AE%A1%E8%AE%A1%E8%B0%83%E7%A0%94/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="k8s日志审计调研k8s日志审计k8s组件在容器编排创建删除等过程中都会将行为记录为日志，可以通过日志审计发现某些黑客的敏感行为进行预警 方案详情目前主要形成以下方案，详情及优缺点提供参考（主要推荐:监听收集集群日志+脚本规则处理）     侵入性 优先级    监听收集集群日志+脚本规则处理 无 2   WEBhook，apiserver行为验证  3   kube-apiserver配置yam">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/7f5a8270d2754ffc920125f57cd40081.png?x-oss-process=image/watermark,type_d3F5LXplbmhlaQ,shadow_50,text_Q1NETiBAaGF0andl,size_20,color_FFFFFF,t_70,g_se,x_16">
+<meta property="og:image" content="https://i.bmp.ovh/imgs/2022/04/02/9143401a6abf10bb.png">
+<meta property="og:image" content="https://s2.loli.net/2022/08/11/OfmvuVI8Rsb7wcr.png">
+<meta property="article:published_time" content="2024-10-12T08:47:26.868Z">
+<meta property="article:modified_time" content="2024-10-12T08:52:41.274Z">
+<meta property="article:author" content="hatjwe">
+<meta property="article:tag" content="日志审计">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://img-blog.csdnimg.cn/7f5a8270d2754ffc920125f57cd40081.png?x-oss-process=image/watermark,type_d3F5LXplbmhlaQ,shadow_50,text_Q1NETiBAaGF0andl,size_20,color_FFFFFF,t_70,g_se,x_16">
+
+
+<link rel="icon" href="/img/avatar1.jpg">
+
+<link href="/css/style.css?v=1.1.0" rel="stylesheet">
+
+<link href="/css/hl_theme/atom-light.css?v=1.1.0" rel="stylesheet">
+
+<link href="//cdn.jsdelivr.net/npm/animate.css@4.1.0/animate.min.css" rel="stylesheet">
+
+<script src="//cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js"></script>
+<script src="/js/titleTip.js?v=1.1.0" ></script>
+
+<script src="//cdn.jsdelivr.net/npm/highlightjs@9.16.2/highlight.pack.min.js"></script>
+<script>
+    hljs.initHighlightingOnLoad();
+</script>
+
+<script src="//cdn.jsdelivr.net/npm/nprogress@0.2.0/nprogress.min.js"></script>
+
+
+
+<script src="//cdn.jsdelivr.net/npm/jquery.cookie@1.4.1/jquery.cookie.min.js" ></script>
+
+<script src="/js/iconfont.js?v=1.1.0" ></script>
+
+<meta name="generator" content="Hexo 7.3.0"></head>
+<div style="display: none">
+  <input class="theme_disqus_on" value="false">
+  <input class="theme_preload_comment" value="">
+  <input class="theme_blog_path" value="">
+  <input id="theme_shortcut" value="true" />
+  <input id="theme_highlight_on" value="true" />
+  <input id="theme_code_copy" value="true" />
+</div>
+
+
+
+<body>
+<aside class="nav">
+    <div class="nav-left">
+        <a href="/"
+   class="avatar_target">
+    <img class="avatar"
+         src="/img/avatar1.jpg"/>
+</a>
+<div class="author">
+    <span>hatjwe</span>
+</div>
+
+<div class="icon">
+    
+</div>
+
+
+
+
+
+<ul>
+    <li>
+        <div class="all active" data-rel="All">All
+            
+                <small>(4)</small>
+            
+        </div>
+    </li>
+    
+        
+            
+                
+    <li>
+        <div data-rel="云原生">
+            <i class="fold iconfont icon-right"></i>
+            云原生
+            <small>(2)</small>
+        </div>
+        
+            <ul class="sub hide">
+                
+                    
+    <li>
+        <div data-rel="云原生&lt;---&gt;k8s">
+            
+            k8s
+            <small>(1)</small>
+        </div>
+        
+    </li>
+
+                
+                    
+    <li>
+        <div data-rel="云原生&lt;---&gt;RBAC">
+            
+            RBAC
+            <small>(1)</small>
+        </div>
+        
+    </li>
+
+                
+            </ul>
+        
+    </li>
+
+            
+        
+    
+        
+            
+                
+    <li>
+        <div data-rel="主机安全">
+            <i class="fold iconfont icon-right"></i>
+            主机安全
+            <small>(1)</small>
+        </div>
+        
+            <ul class="sub hide">
+                
+                    
+    <li>
+        <div data-rel="主机安全&lt;---&gt;Capsule8">
+            
+            Capsule8
+            <small>(1)</small>
+        </div>
+        
+    </li>
+
+                
+            </ul>
+        
+    </li>
+
+            
+        
+    
+        
+            
+        
+    
+        
+            
+        
+    
+        
+            
+                
+    <li>
+        <div data-rel="linux运维">
+            
+            linux运维
+            <small>(1)</small>
+        </div>
+        
+    </li>
+
+            
+        
+    
+        
+            
+        
+    
+</ul>
+<div class="left-bottom">
+    <div class="menus">
+        
+            
+            
+            
+    </div>
+    <div>
+        
+            <a class="about  hasFriend  site_url"
+               
+               href="/about">About</a>
+        
+        <a style="width: 50%"
+                
+                                           class="friends">Friends</a>
+        
+    </div>
+</div>
+<input type="hidden" id="yelog_site_posts_number" value="4">
+
+<div style="display: none">
+    <span id="busuanzi_value_site_uv"></span>
+    <span id="busuanzi_value_site_pv"></span>
+</div>
+
+    </div>
+    <div class="nav-right">
+        <div class="friends-area">
+    <div class="friends-title">
+        Links
+        <i class="iconfont icon-left"></i>
+    </div>
+    <div class="friends-content">
+        <ul>
+            
+        </ul>
+    </div>
+</div>
+        <div class="title-list">
+    <div class="right-top">
+        <div id="default-panel">
+            <i class="iconfont icon-search" data-title="search shortcut key i"></i>
+            <div class="right-title">All</div>
+            <i class="iconfont icon-file-tree" data-title="switch to outline view shortcut key w"></i>
+        </div>
+        <div id="search-panel">
+            <i class="iconfont icon-left" data-title="return"></i>
+            <input id="local-search-input" autocomplete="off"/>
+            <label class="border-line" for="input"></label>
+            <i class="iconfont icon-case-sensitive" data-title="case sensitive"></i>
+            <i class="iconfont icon-tag" data-title="label"></i>
+        </div>
+        <div id="outline-panel" style="display: none">
+            <div class="right-title">outline</div>
+            <i class="iconfont icon-list" data-title="switch to article list"></i>
+        </div>
+    </div>
+
+    <div class="tags-list">
+    <input id="tag-search" />
+    <div class="tag-wrapper">
+        
+            <li class="article-tag-list-item">
+                <i class="iconfont icon-tag"></i><a>日志审计</a>
+            </li>
+        
+            <li class="article-tag-list-item">
+                <i class="iconfont icon-tag"></i><a>Capsule8</a>
+            </li>
+        
+            <li class="article-tag-list-item">
+                <i class="iconfont icon-tag"></i><a>linux命令</a>
+            </li>
+        
+            <li class="article-tag-list-item">
+                <i class="iconfont icon-tag"></i><a>RBAC</a>
+            </li>
+        
+    </div>
+
+</div>
+
+    
+    <nav id="title-list-nav">
+        
+        
+        <a  class="All 云原生 k8s "
+           href="/2024/10/12/K8s%E6%97%A5%E5%BF%97%E5%AE%A1%E8%AE%A1%E8%B0%83%E7%A0%94/"
+           data-tag="日志审计"
+           data-author="" >
+            <span class="post-title" title="k8s日志审计调研">k8s日志审计调研</span>
+            <span class="post-date" title="2024-10-12 16:47:26">2024/10/12</span>
+        </a>
+        
+        
+        <a  class="All linux运维 "
+           href="/2024/10/09/%E7%A3%81%E7%9B%98%E5%88%86%E5%8C%BA/"
+           data-tag="linux命令"
+           data-author="" >
+            <span class="post-title" title="磁盘挂载分区">磁盘挂载分区</span>
+            <span class="post-date" title="2024-10-09 11:56:07">2024/10/09</span>
+        </a>
+        
+        
+        <a  class="All 云原生 RBAC "
+           href="/2024/10/05/RBAC/"
+           data-tag="RBAC"
+           data-author="" >
+            <span class="post-title" title="K8s之RBAC">K8s之RBAC</span>
+            <span class="post-date" title="2024-10-05 21:49:22">2024/10/05</span>
+        </a>
+        
+        
+        <a  class="All 主机安全 Capsule8 "
+           href="/2024/10/05/ecaplute8/"
+           data-tag="Capsule8"
+           data-author="" >
+            <span class="post-title" title="Capsule8分析 (一)">Capsule8分析 (一)</span>
+            <span class="post-date" title="2024-10-05 21:49:22">2024/10/05</span>
+        </a>
+        
+        <div id="no-item-tips">
+
+        </div>
+    </nav>
+    <div id="outline-list">
+    </div>
+</div>
+
+    </div>
+    <div class="hide-list">
+        <div class="semicircle" data-title="Toggle full screen shortcut key s">
+            <div class="brackets first"><</div>
+            <div class="brackets">&gt;</div>
+        </div>
+    </div>
+</aside>
+<div id="post">
+    <div class="pjax">
+        <article id="post-K8s日志审计调研" class="article article-type-post" itemscope itemprop="blogPost">
+    
+        <h1 class="article-title">k8s日志审计调研</h1>
+    
+    <div class="article-meta">
+        
+        
+        
+        <span class="book">
+            <i class="iconfont icon-category"></i>
+            
+            
+            <a  data-rel="云原生">云原生</a> > 
+            
+            <a  data-rel="云原生&lt;---&gt;k8s">k8s</a>
+            
+        </span>
+        
+        
+        <span class="tag">
+            <i class="iconfont icon-tag"></i>
+            
+            <a class="color5">日志审计</a>
+            
+        </span>
+        
+    </div>
+    <div class="article-meta">
+        
+            Created At : <time class="date" title='Updated At: 2024-10-12 16:52:41'>2024-10-12 16:47</time>
+        
+    </div>
+    <div class="article-meta">
+        
+        
+        <span id="busuanzi_container_page_pv">
+            Views 👀 :<span id="busuanzi_value_page_pv">
+                <span class="count-comment">
+                    <span class="spinner">
+                      <div class="cube1"></div>
+                      <div class="cube2"></div>
+                    </span>
+                </span>
+            </span>
+        </span>
+        
+        
+    </div>
+    
+    <div class="toc-ref">
+    
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#k8s%E6%97%A5%E5%BF%97%E5%AE%A1%E8%AE%A1%E8%B0%83%E7%A0%94"><span class="toc-text">k8s日志审计调研</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%96%B9%E6%A1%88%E8%AF%A6%E6%83%85"><span class="toc-text">方案详情</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#kube-apiserver%E9%85%8D%E7%BD%AEyaml%E7%AD%96%E7%95%A5%E8%A7%84%E5%88%99"><span class="toc-text">kube-apiserver配置yaml策略规则</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%9B%91%E5%90%AC%E6%94%B6%E9%9B%86%E9%9B%86%E7%BE%A4%E6%97%A5%E5%BF%97-%E8%84%9A%E6%9C%AC%E8%A7%84%E5%88%99%E5%A4%84%E7%90%86"><span class="toc-text">监听收集集群日志+脚本规则处理</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%8E%B7%E5%8F%96%E6%96%B9%E5%BC%8F%EF%BC%9A"><span class="toc-text">获取方式：</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84"><span class="toc-text">数据结构</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%9B%91%E5%90%AC%E6%94%B6%E9%9B%86%E9%9B%86%E7%BE%A4%E6%97%A5%E5%BF%97"><span class="toc-text">监听收集集群日志</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%A4%84%E7%90%86%E5%88%86%E6%9E%90%E6%95%B0%E6%8D%AE"><span class="toc-text">处理分析数据</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%9B%B8%E5%85%B3%E8%A1%8C%E4%B8%BA%E8%A7%84%E5%88%99"><span class="toc-text">相关行为规则</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%B7%A5%E4%BD%9C%E6%B5%81%E7%A8%8B"><span class="toc-text">工作流程</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#WEBhook-apiserver%E8%A1%8C%E4%B8%BA%E6%B6%88%E6%81%AF-%E8%A7%84%E5%88%99%E5%BC%95%E6%93%8E%EF%BC%88%E6%9C%80%E7%BB%88%E9%80%89%E6%8B%A9%E6%96%B9%E6%A1%88%EF%BC%89"><span class="toc-text">WEBhook apiserver行为消息+规则引擎（最终选择方案）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%B7%A5%E4%BD%9C%E6%B5%81%E7%A8%8B-1"><span class="toc-text">工作流程</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%9B%B8%E5%85%B3%E8%A1%8C%E4%B8%BA%E8%A7%84%E5%88%99-1"><span class="toc-text">相关行为规则</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BD%BF%E7%94%A8%E6%96%B9%E6%B3%95"><span class="toc-text">使用方法</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E8%A7%84%E5%88%99%E7%BC%96%E5%86%99"><span class="toc-text">规则编写</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%97%A5%E5%BF%97%E5%AE%A1%E8%AE%A1-%E6%96%B0%E5%A2%9E%E5%8C%BF%E5%90%8D%E7%94%A8%E6%88%B7%E8%AE%BF%E9%97%AE%E8%A7%84%E5%88%99"><span class="toc-text">日志审计-新增匿名用户访问规则</span></a></li></ol></li></ol>
+    
+<style>
+    .left-col .switch-btn,
+    .left-col .switch-area {
+        display: none;
+    }
+    .toc-level-3 i,
+    .toc-level-3 ol {
+        display: none !important;
+    }
+</style>
+</div>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h1 id="k8s日志审计调研"><a href="#k8s日志审计调研" class="headerlink" title="k8s日志审计调研"></a>k8s日志审计调研</h1><p>k8s日志审计k8s组件在容器编排创建删除等过程中都会将行为记录为日志，可以通过日志审计发现某些黑客的敏感行为进行预警</p>
+<h2 id="方案详情"><a href="#方案详情" class="headerlink" title="方案详情"></a>方案详情</h2><p>目前主要形成以下方案，详情及优缺点提供参考（主要推荐:监听收集集群日志+脚本规则处理）</p>
+<table>
+<thead>
+<tr>
+<th align="left"></th>
+<th align="right">侵入性</th>
+<th align="center">优先级</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left">监听收集集群日志+脚本规则处理</td>
+<td align="right">无</td>
+<td align="center">2</td>
+</tr>
+<tr>
+<td align="left">WEBhook，apiserver行为验证</td>
+<td align="right"></td>
+<td align="center">3</td>
+</tr>
+<tr>
+<td align="left">kube-apiserver配置yaml策略规则</td>
+<td align="right">策略配置需要修改配置文件</td>
+<td align="center">1</td>
+</tr>
+</tbody></table>
+<h2 id="kube-apiserver配置yaml策略规则"><a href="#kube-apiserver配置yaml策略规则" class="headerlink" title="kube-apiserver配置yaml策略规则"></a>kube-apiserver配置yaml策略规则</h2><p>审计政策定义了关于应记录哪些事件以及应包含哪些数据的规则。处理事件时，将按顺序与规则列表进行比较。第一个匹配规则设置事件的 [审计级别][auditing-level]。已知的审计级别有：<br>None -符合这条规则的日志将不会记录。<br>Metadata -记录请求的 metadata（请求的用户、timestamp、resource、verb 等等），但是不记录请求或者响应的消息体。<br>Request -记录事件的 metadata 和请求的消息体，但是不记录响应的消息体。这不适用于非资源类型的请求。<br>RequestResponse -记录事件的 metadata，请求和响应的消息体。这不适用于非资源类型的请求。<br>您可以使用 –audit-policy-file 标志将包含策略的文件传递给 kube-apiserver。如果不设置该标志，则不记录事件。注意 rules 字段必须在审计策略文件中提供。<br>这种方式为k8s自带功能策略方面比较丰富，缺点在于需要配置apiserver，但apiserver多以system pod形式启动因此会导致k8s重启。<br>优点：官方功能获取日志都很方便<br>缺点：需要配置apiserver参数，大程度影响k8s运行，消耗性能较高开启后部署资源有明显卡顿</p>
+<h2 id="监听收集集群日志-脚本规则处理"><a href="#监听收集集群日志-脚本规则处理" class="headerlink" title="监听收集集群日志+脚本规则处理"></a>监听收集集群日志+脚本规则处理</h2><h3 id="获取方式："><a href="#获取方式：" class="headerlink" title="获取方式："></a>获取方式：</h3><p>kubectl cluster-info dump 获取所有pod yaml信息,kube-apiserver,kube-controller,kube-proxy,kube-scheduler组件日志（socket形式，外部工具）</p>
+<h3 id="数据结构"><a href="#数据结构" class="headerlink" title="数据结构"></a>数据结构</h3><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">--- pod名字/log.txt(容器日志)</span><br><span class="line">---daemonsets.json</span><br><span class="line">---events.json</span><br><span class="line">---pods.json</span><br><span class="line">---replicasets.json</span><br><span class="line">---services.json</span><br></pre></td></tr></table></figure>
+<h3 id="监听收集集群日志"><a href="#监听收集集群日志" class="headerlink" title="监听收集集群日志"></a>监听收集集群日志</h3><p>journalctl -l -u kubelet  (流文件)<br>短时间间隔不断监听我们可以获取k8s集群日志的信息，包括pod创建时用yaml，server，namespace,ClusterRole,容器日志，事件日志</p>
+<h3 id="处理分析数据"><a href="#处理分析数据" class="headerlink" title="处理分析数据"></a>处理分析数据</h3><p>编写脚本主要是将获取到的数据有一些包括pod的创建节点树，events事件，服务等进行相关联，通过观察日志变化获取行为变化对特殊行为进行预警</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">kubectl cluster-info dump </span><br></pre></td></tr></table></figure>
+<h3 id="相关行为规则"><a href="#相关行为规则" class="headerlink" title="相关行为规则"></a>相关行为规则</h3><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">使用私有凭证创建Configmap  </span><br><span class="line">创建pod敏感挂载 </span><br><span class="line">检测在kube-system或kube-public命名空间中创建pod </span><br><span class="line">检测在kube-system或kube-public命名空间中创建pod失败</span><br><span class="line">检测在kube-system或kube-public命名空间中创建服务帐户 </span><br><span class="line">检测任何创建/删除以system开头的ClusterRole/Role </span><br><span class="line">使用私有凭证创建Configmap </span><br><span class="line">检测创建可执行写操作的角色/群集角色 </span><br></pre></td></tr></table></figure>
+
+<h3 id="工作流程"><a href="#工作流程" class="headerlink" title="工作流程"></a>工作流程</h3><p>运行监听功能每隔一段时间获取日志，获取日志日志json格式输出–json字段解析抽象化当前k8s集群状态–加载规则判断逻辑–根据时间间隔观察是否触发危险行为产生警告.（日志分发）<br><img src="https://img-blog.csdnimg.cn/7f5a8270d2754ffc920125f57cd40081.png?x-oss-process=image/watermark,type_d3F5LXplbmhlaQ,shadow_50,text_Q1NETiBAaGF0andl,size_20,color_FFFFFF,t_70,g_se,x_16" alt="在这里插入图片描述"><br>优点：无侵入性只是获取k8s所有组件日志，之后通过脚本进行数据加载，集群状态模拟，通过时间对比行为变化进行预测，<br>缺点：通过观察k8s日志发现比较粗略更像是程序的报错，因此对于一些信息的获取无法从日志直观看出比如<br>      1.创建secert<br>      没有在日志中进行体现（创建secert获取不到)。</p>
+<h3 id="WEBhook-apiserver行为消息-规则引擎（最终选择方案）"><a href="#WEBhook-apiserver行为消息-规则引擎（最终选择方案）" class="headerlink" title="WEBhook apiserver行为消息+规则引擎（最终选择方案）"></a>WEBhook apiserver行为消息+规则引擎（最终选择方案）</h3><p>K8S中提供了自定义资源类型和自定义控制器来扩展功能，还提供了动态准入控制，其实就是通过Webhook来实现准入控制，分为两种：验证性质的准入 Webhook （Validating Admission Webhook） 和 修改性质的准入 Webhook （Mutating Admission Webhook）</p>
+<p>创建RBAC—证书认证—运行webhook<br>优点:在apiserver行为处获取所有行为，直接进行规则验证，比较灵活方便<br>缺点：会对api响应有一定影响。</p>
+<h3 id="工作流程-1"><a href="#工作流程-1" class="headerlink" title="工作流程"></a>工作流程</h3><p><img src="https://i.bmp.ovh/imgs/2022/04/02/9143401a6abf10bb.png"><br>apiserver是k8s资源配额控制的入口，通过webhook可以获取集群内资源行为变化，将变化数据发送给规则引擎进行处理<br>缺点：会对api响应有一定影响，在master节点部署<br>获取数据概览</p>
+<h3 id="相关行为规则-1"><a href="#相关行为规则-1" class="headerlink" title="相关行为规则"></a>相关行为规则</h3><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">执行pod操作(创建删除更新)</span><br><span class="line">执行ServiceAccount操作(创建删除更新)</span><br><span class="line">请避免在 system  namespace中操作不受信任的ServiceAccount</span><br><span class="line">执行Service操作(创建删除更新)</span><br><span class="line">请避免在 system  namespace中操作不受信任的Service</span><br><span class="line"> 创建pod开启NodePort </span><br><span class="line"><span class="string">&quot;执行&quot;</span><span class="string">&quot;ConfigMap操作(创建删除更新)&quot;</span></span><br><span class="line">请避免在 system  namespace中操作不受信任的ConfigMap</span><br><span class="line">请避免在 system  namespace中操作不受信任的pod</span><br><span class="line">敏感目录挂载事件</span><br><span class="line">特权容器事件</span><br><span class="line">Namespace操作(创建删除更新)</span><br><span class="line">携带服务账号创建pod</span><br></pre></td></tr></table></figure>
+<h3 id="使用方法"><a href="#使用方法" class="headerlink" title="使用方法"></a>使用方法</h3><p>我们可以通过将webhook获取的信息生成本地json用于测试，在k8s_audit&#x2F;cmd&#x2F;audit&#x2F;main.go 下request.json为获取的信息请求json文件，引擎会读取文件进行规则匹配和显示结果，项目用到了研发那边定制的vendor所以build需要添加-mod&#x3D;vendor进行编译，编译好后直接运行即可。</p>
+<h4 id="规则编写"><a href="#规则编写" class="headerlink" title="规则编写"></a>规则编写</h4><p>k8s_audit&#x2F;pkg&#x2F;policy_engine&#x2F;rule.engine</p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line">rule <span class="string">&quot;policy_1&quot;</span> <span class="string">&quot;Pod事件&quot;</span> salience <span class="number">0</span></span><br><span class="line">begin</span><br><span class="line">  if toString(req.Operation) == <span class="string">&quot;&quot;</span> <span class="punctuation">&#123;</span></span><br><span class="line">    return</span><br><span class="line">  <span class="punctuation">&#125;</span></span><br><span class="line">  if req.Kind.Kind != <span class="string">&quot;Pod&quot;</span> <span class="punctuation">&#123;</span></span><br><span class="line">    return</span><br><span class="line">  <span class="punctuation">&#125;</span></span><br><span class="line"></span><br><span class="line">  obj = newObject()</span><br><span class="line"></span><br><span class="line">  obj<span class="punctuation">[</span><span class="string">&quot;id&quot;</span><span class="punctuation">]</span>                  = <span class="string">&quot;policy_1&quot;</span></span><br><span class="line">  obj<span class="punctuation">[</span><span class="string">&quot;title&quot;</span><span class="punctuation">]</span>               = <span class="string">&quot;pod事件&quot;</span></span><br><span class="line">  obj<span class="punctuation">[</span><span class="string">&quot;description&quot;</span><span class="punctuation">]</span>         = <span class="string">&quot;执行pod操作(创建删除更新)&quot;</span></span><br><span class="line">  obj<span class="punctuation">[</span><span class="string">&quot;severity&quot;</span><span class="punctuation">]</span>            = <span class="string">&quot;NOTICE&quot;</span></span><br><span class="line">  obj<span class="punctuation">[</span><span class="string">&quot;type&quot;</span><span class="punctuation">]</span>                = <span class="string">&quot;Pod&quot;</span></span><br><span class="line">  obj<span class="punctuation">[</span><span class="string">&quot;recommended_actions&quot;</span><span class="punctuation">]</span> = <span class="string">&quot;&quot;</span></span><br><span class="line">  obj<span class="punctuation">[</span><span class="string">&quot;version&quot;</span><span class="punctuation">]</span>             = <span class="string">&quot;v1&quot;</span></span><br><span class="line">  obj<span class="punctuation">[</span><span class="string">&quot;msg&quot;</span><span class="punctuation">]</span>                 = <span class="string">&quot;&quot;</span></span><br><span class="line"></span><br><span class="line">  return obj</span><br><span class="line">end</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>自定义方法，在规则中需要添加自定义方法k8s_audit&#x2F;cmd&#x2F;audit&#x2F;main.go中定义，定义实例如下</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">Audit</span><span class="params">(req *admissionv1.AdmissionRequest)</span></span> <span class="type">error</span> &#123;</span><br><span class="line">	gvk := schema.GroupVersionKind(req.Kind)</span><br><span class="line">	decoder := codecs.UniversalDeserializer()</span><br><span class="line"></span><br><span class="line">	object, _, err := decoder.Decode(</span><br><span class="line">		req.Object.Raw,</span><br><span class="line">		&amp;gvk,</span><br><span class="line">		<span class="literal">nil</span>,</span><br><span class="line">	)</span><br><span class="line">	<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">		<span class="keyword">return</span> errors.Wrap(err, <span class="string">&quot;decode object&quot;</span>)</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	oldObject, _, err := decoder.Decode(</span><br><span class="line">		req.OldObject.Raw,</span><br><span class="line">		&amp;gvk,</span><br><span class="line">		<span class="literal">nil</span>,</span><br><span class="line">	)</span><br><span class="line">	<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">		<span class="keyword">return</span> errors.Wrap(err, <span class="string">&quot;decode old object&quot;</span>)</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	result, err := policy_engine.Execute(<span class="keyword">map</span>[<span class="type">string</span>]any&#123;</span><br><span class="line">		<span class="string">&quot;req&quot;</span>:       req,</span><br><span class="line">		<span class="string">&quot;object&quot;</span>:    object,</span><br><span class="line">		<span class="string">&quot;oldObject&quot;</span>: oldObject,</span><br><span class="line">		<span class="string">&quot;newObject&quot;</span>: <span class="function"><span class="keyword">func</span><span class="params">()</span></span> <span class="keyword">map</span>[<span class="type">string</span>]any &#123;</span><br><span class="line">			<span class="keyword">return</span> <span class="keyword">map</span>[<span class="type">string</span>]any&#123;&#125;</span><br><span class="line">		&#125;,</span><br><span class="line">		<span class="string">&quot;sprintf&quot;</span>: fmt.Sprintf,</span><br><span class="line">		<span class="string">&quot;inArray&quot;</span>: <span class="function"><span class="keyword">func</span><span class="params">(val any, array ...any)</span></span> <span class="type">bool</span> &#123;</span><br><span class="line">			<span class="keyword">return</span> mbase.InSliceAny(val, array)</span><br><span class="line">		&#125;,</span><br><span class="line">		<span class="string">&quot;toString&quot;</span>:  mconv.String,</span><br><span class="line">		<span class="string">&quot;toBool&quot;</span>:    mconv.Bool,</span><br><span class="line">		<span class="string">&quot;hasPrefix&quot;</span>: strings.HasPrefix,</span><br><span class="line">		<span class="string">&quot;hasSuffix&quot;</span>: strings.HasSuffix,</span><br><span class="line">		<span class="string">&quot;contains&quot;</span>:  strings.Contains,</span><br><span class="line">		<span class="string">&quot;println&quot;</span>:   fmt.Println,</span><br><span class="line">		<span class="string">&quot;len&quot;</span>: <span class="function"><span class="keyword">func</span><span class="params">(val any)</span></span> <span class="type">int</span> &#123;</span><br><span class="line">			v := reflect.ValueOf(val)</span><br><span class="line"></span><br><span class="line">			<span class="keyword">if</span> v.Kind() == reflect.Slice &#123;</span><br><span class="line">				<span class="keyword">return</span> v.Len()</span><br><span class="line">			&#125;</span><br><span class="line"></span><br><span class="line">			<span class="keyword">return</span> <span class="number">0</span></span><br><span class="line">		&#125;,</span><br><span class="line">	&#125;)</span><br><span class="line">	<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">		<span class="keyword">return</span> errors.Wrapf(err, <span class="string">&quot;AuditService Execute error&quot;</span>)</span><br><span class="line">	&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+
+
+
+<h2 id="日志审计-新增匿名用户访问规则"><a href="#日志审计-新增匿名用户访问规则" class="headerlink" title="日志审计-新增匿名用户访问规则"></a>日志审计-新增匿名用户访问规则</h2><p>webhook获取请求userinfo字段，正则匹配用户为system:anonymous</p>
+<p>webhook抓到是这样的</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">UserInfo=&#123;system:anonymous  [system:unauthenticated] map[]&#125;</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://s2.loli.net/2022/08/11/OfmvuVI8Rsb7wcr.png" alt="image-20220811165933304"></p>
+<p><strong>风险类型字段描述新增：</strong></p>
+<p>匿名用户访问事件</p>
+<p>测试方式</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//给匿名用户授权</span></span><br><span class="line">kubectl create clusterrolebinding test:anonymous --clusterrole=cluster-admin --user=system:anonymous</span><br><span class="line"><span class="comment">//写个yaml文件</span></span><br><span class="line">cat &gt; nginx-pod.yaml &lt;&lt; EOF</span><br><span class="line">apiVersion: v1</span><br><span class="line">kind: Pod</span><br><span class="line">metadata:</span><br><span class="line">  name: test<span class="number">-444</span></span><br><span class="line">spec:</span><br><span class="line">  containers:</span><br><span class="line">  - name: test<span class="number">-444</span></span><br><span class="line">    image: nginx:<span class="number">1.14</span><span class="number">.2</span></span><br><span class="line">    volumeMounts:</span><br><span class="line">    - name: host</span><br><span class="line">      mountPath: /host</span><br><span class="line">  volumes:</span><br><span class="line">  - name: host</span><br><span class="line">    hostPath:</span><br><span class="line">      path: /</span><br><span class="line">      type: Directory</span><br><span class="line">EOF</span><br><span class="line"><span class="comment">//匿名用户请求</span></span><br><span class="line">curl  -k https:<span class="comment">//192.168.110.20:6443/api/v1/namespaces/dfault/pods -X POST --header &#x27;content-type: application/yaml&#x27; --data-binary @nginx-pod.yaml</span></span><br><span class="line"><span class="comment">//删掉匿名用户授权</span></span><br><span class="line">kubectl delete clusterrolebinding test:anonymous</span><br></pre></td></tr></table></figure>
+
+
+
+
+
+
+
+
+
+      
+       <hr><span style="font-style: italic;color: gray;"> 转载请注明来源. </span>
+    </div>
+</article>
+
+
+
+
+
+
+
+    
+
+
+
+
+    </div>
+    <div class="copyright">
+        <p class="footer-entry">
+    ©2022-2024
+</p>
+
+
+    </div>
+    <div class="full-toc">
+        <button class="full" data-title="Toggle full screen shortcut key s"><span class="min "></span></button>
+<a class="" id="rocket" ></a>
+
+    </div>
+</div>
+
+</body>
+<script src="/js/jquery.pjax.js?v=1.1.0" ></script>
+
+<script src="/js/script.js?v=1.1.0" ></script>
+<script>
+    var img_resize = 'default';
+    function initArticle() {
+        /*渲染对应的表格样式*/
+        
+            $("#post .pjax table").addClass("green_title");
+        
+
+        /*渲染打赏样式*/
+        
+
+        /*高亮代码块行号*/
+        
+
+        /*访问数量*/
+        
+        $.getScript("//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js");
+        
+
+        /*代码高亮，行号对齐*/
+        $('.pre-numbering').css('line-height',$('.has-numbering').css('line-height'));
+
+        
+        
+    }
+
+    /*打赏页面隐藏与展示*/
+    
+
+</script>
+
+<!--加入行号的高亮代码块样式-->
+
+<!--自定义样式设置-->
+<style>
+    
+    
+    .nav {
+        width: 542px;
+    }
+    .nav.fullscreen {
+        margin-left: -542px;
+    }
+    .nav-left {
+        width: 120px;
+    }
+    
+    
+    @media screen and (max-width: 1468px) {
+        .nav {
+            width: 492px;
+        }
+        .nav.fullscreen {
+            margin-left: -492px;
+        }
+        .nav-left {
+            width: 100px;
+        }
+    }
+    
+    
+    @media screen and (max-width: 1024px) {
+        .nav {
+            width: 492px;
+            margin-left: -492px
+        }
+        .nav.fullscreen {
+            margin-left: 0;
+        }
+    }
+    
+    @media screen and (max-width: 426px) {
+        .nav {
+            width: 100%;
+        }
+        .nav-left {
+            width: 100%;
+        }
+    }
+    
+    
+    .nav-right .title-list nav a .post-title, .nav-right .title-list #local-search-result a .post-title {
+        color: #383636;
+    }
+    
+    
+    .nav-right .title-list nav a .post-date, .nav-right .title-list #local-search-result a .post-date {
+        color: #5e5e5f;
+    }
+    
+    
+    .nav-right nav a.hover, #local-search-result a.hover{
+        background-color: #e2e0e0;
+    }
+    
+    
+
+    /*列表样式*/
+    
+
+    /* 背景图样式 */
+    
+    
+
+
+    /*引用块样式*/
+    
+
+    /*文章列表背景图*/
+    
+
+    
+</style>
+
+
+
+
+
+
+
+</html>
