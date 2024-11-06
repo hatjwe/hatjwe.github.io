@@ -15,7 +15,7 @@
 <meta property="og:locale" content="en_US">
 <meta property="og:image" content="https://prefect12.oss-cn-beijing.aliyuncs.com/24-11-6-1.png">
 <meta property="article:published_time" content="2024-11-06T09:03:02.517Z">
-<meta property="article:modified_time" content="2024-11-06T09:24:24.602Z">
+<meta property="article:modified_time" content="2024-11-06T09:28:47.609Z">
 <meta property="article:author" content="hatjwe">
 <meta property="article:tag" content="CI&#x2F;CD工具">
 <meta name="twitter:card" content="summary">
@@ -381,7 +381,7 @@
     </div>
     <div class="article-meta">
         
-            Created At : <time class="date" title='Updated At: 2024-11-06 17:24:24'>2024-11-06 17:03</time>
+            Created At : <time class="date" title='Updated At: 2024-11-06 17:28:47'>2024-11-06 17:03</time>
         
     </div>
     <div class="article-meta">
@@ -428,6 +428,9 @@
 <p>command: –interval 10 表示多久监听一次</p>
 <p>通过docker logs 查看更新情况</p>
 <p><img src="https://prefect12.oss-cn-beijing.aliyuncs.com/24-11-6-1.png"></p>
+<p>配置bash脚本一键docker login登录，再搭配docker-compose使用</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">## 先更新仓库地址</span></span><br><span class="line"><span class="built_in">echo</span> <span class="string">&#x27;&#123; &quot;insecure-registries&quot;: [&quot;192.168.xxx.xxx&quot;] &#125;&#x27;</span> &gt; /etc/docker/daemon.json</span><br><span class="line">systemctl restart docker</span><br><span class="line"><span class="comment">## 设置 Harbor 的地址</span></span><br><span class="line">HARBOR_URL=<span class="string">&quot;192.168.145.170:80&quot;</span>  <span class="comment"># 替换为你的 Harbor 地址</span></span><br><span class="line"><span class="comment"># # 登录到 Harbor（如果需要）</span></span><br><span class="line">docker login <span class="variable">$HARBOR_URL</span> -u admin -p xxx  <span class="comment"># 替换为实际的用户名和密码</span></span><br><span class="line"><span class="comment"># # 检查登录是否成功</span></span><br><span class="line"><span class="keyword">if</span> [ $? -ne 0 ]; <span class="keyword">then</span></span><br><span class="line">     <span class="built_in">echo</span> <span class="string">&quot;登录失败，请检查用户名和密码。&quot;</span></span><br><span class="line">     <span class="built_in">exit</span> 1</span><br><span class="line"> <span class="keyword">fi</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
 
       
        <hr><span style="font-style: italic;color: gray;"> 转载请注明来源. </span>
