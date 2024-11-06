@@ -2,9 +2,9 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Hexo</title>
-  <meta name="keywords" content="">
-  <meta name="description" content="Hexo">
+  <title>DevOps实践-Watchtower一键全自动的watchtower | Hexo</title>
+  <meta name="keywords" content=" CI/CD工具 ">
+  <meta name="description" content="DevOps实践-Watchtower一键全自动的watchtower | Hexo">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 <meta name="description" content="最近在开发的过程中需要大量使用镜像部署在不同的环境上，导致镜像如果更新则每个环境也要更新一下，于是找了下发现了一个镜像持续更新的利器Watchtower 项目地址：https:&#x2F;&#x2F;github.com&#x2F;containrrr&#x2F;watchtower Watchtower本身方便部署，是一个docker镜像， 当它启动为容器时，会监控本机环境上的容器是否有更新变化，如果有更新则会通过重启容器的方式更新容">
 <meta property="og:type" content="article">
@@ -59,7 +59,7 @@
 
 
 <body>
-<aside class="nav mobile">
+<aside class="nav">
     <div class="nav-left">
         <a href="/"
    class="avatar_target">
@@ -346,16 +346,62 @@
 
     </div>
     <div class="hide-list">
-        <div class="semicircle" data-title="切换全屏 快捷键 s">
+        <div class="semicircle" data-title="Toggle full screen shortcut key s">
             <div class="brackets first"><</div>
             <div class="brackets">&gt;</div>
         </div>
     </div>
 </aside>
-<div id="post" class="index">
+<div id="post">
     <div class="pjax">
-        <article class="index">
-            <div class="toc-ref">
+        <article id="post-DevOps实践" class="article article-type-post" itemscope itemprop="blogPost">
+    
+        <h1 class="article-title">DevOps实践-Watchtower一键全自动的watchtower</h1>
+    
+    <div class="article-meta">
+        
+        
+        
+        <span class="book">
+            <i class="iconfont icon-category"></i>
+            
+            
+            <a  data-rel="DevOps">DevOps</a>
+            
+        </span>
+        
+        
+        <span class="tag">
+            <i class="iconfont icon-tag"></i>
+            
+            <a class="color3">CI/CD工具</a>
+            
+        </span>
+        
+    </div>
+    <div class="article-meta">
+        
+            Created At : <time class="date" title='Updated At: 2024-11-06 17:24:24'>2024-11-06 17:03</time>
+        
+    </div>
+    <div class="article-meta">
+        
+        
+        <span id="busuanzi_container_page_pv">
+            Views 👀 :<span id="busuanzi_value_page_pv">
+                <span class="count-comment">
+                    <span class="spinner">
+                      <div class="cube1"></div>
+                      <div class="cube2"></div>
+                    </span>
+                </span>
+            </span>
+        </span>
+        
+        
+    </div>
+    
+    <div class="toc-ref">
     
         
     
@@ -370,11 +416,35 @@
     }
 </style>
 </div>
-            <p>- </p>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>最近在开发的过程中需要大量使用镜像部署在不同的环境上，导致镜像如果更新则每个环境也要更新一下，于是找了下发现了一个镜像持续更新的利器Watchtower</p>
+<p>项目地址：<a target="_blank" rel="noopener" href="https://github.com/containrrr/watchtower">https://github.com/containrrr/watchtower</a></p>
+<p>Watchtower本身方便部署，是一个docker镜像， 当它启动为容器时，会监控本机环境上的容器是否有更新变化，如果有更新则会通过重启容器的方式更新容器。另外Watchtower可以通过配置镜像仓库地址（dockerhub或者是私有的habor地址），当仓库内相同镜像存在变更时，则自动从镜像仓库拉去镜像更新容器内容，更新镜像到harbor即可自动更新部署到的多个环境容器。</p>
+<p>配置镜像仓库：<br>可以参考文档：<a target="_blank" rel="noopener" href="https://containrrr.dev/watchtower/">https://containrrr.dev/watchtower/</a><br>如果可以进行docker login的方式可以先登录然后直接将登录后的密钥文件挂载进去即可,例如我的docker-compose</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">watchtower:</span><br><span class="line">    image: <span class="number">1</span>xxx/kscan/containrrr/watchtower</span><br><span class="line">    volumes:</span><br><span class="line">      - /<span class="keyword">var</span>/run/docker.sock:/<span class="keyword">var</span>/run/docker.sock</span><br><span class="line">      - /root/.docker/config.json:/config.json</span><br><span class="line">    command: --interval <span class="number">10</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
 
-        </article>
-        
-        
+<p>command: –interval 10 表示多久监听一次</p>
+<p>通过docker logs 查看更新情况</p>
+<p><img src="https://prefect12.oss-cn-beijing.aliyuncs.com/24-11-6-1.png"></p>
+
+      
+       <hr><span style="font-style: italic;color: gray;"> 转载请注明来源. </span>
+    </div>
+</article>
+
+
+
+
+
+
+
+    
+
+
+
+
     </div>
     <div class="copyright">
         <p class="footer-entry">
@@ -383,11 +453,11 @@
 
 
     </div>
-</div>
-<div class="full-toc">
-    <button class="full" data-title="Toggle full screen shortcut key s"><span class="min "></span></button>
+    <div class="full-toc">
+        <button class="full" data-title="Toggle full screen shortcut key s"><span class="min "></span></button>
 <a class="" id="rocket" ></a>
 
+    </div>
 </div>
 
 </body>
