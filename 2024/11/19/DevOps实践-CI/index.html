@@ -2,9 +2,9 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Hexo</title>
-  <meta name="keywords" content="">
-  <meta name="description" content="Hexo">
+  <title>DevOps实践-gitlab CI集成 | Hexo</title>
+  <meta name="keywords" content=" CI/CD工具 ">
+  <meta name="description" content="DevOps实践-gitlab CI集成 | Hexo">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 <meta name="description" content="最近在安全平台开发过程中，希望使开发流程更加规范和自动化。于是了解了下CI&#x2F;CD相关知识。 CI&#x2F;CD Pipeline简单介绍下CI&#x2F;CD Pipeline，提到DevOps，很多人就想到了CI&#x2F;CD Pipeline，甚至很多个人或者企业认为完成了CI&#x2F;CD Pipeline就等于实现了DevOps。Pipeline 指管道或者流水线，类似于工">
 <meta property="og:type" content="article">
@@ -64,7 +64,7 @@
 
 
 <body>
-<aside class="nav mobile">
+<aside class="nav">
     <div class="nav-left">
         <a href="/"
    class="avatar_target">
@@ -369,18 +369,64 @@
 
     </div>
     <div class="hide-list">
-        <div class="semicircle" data-title="切换全屏 快捷键 s">
+        <div class="semicircle" data-title="Toggle full screen shortcut key s">
             <div class="brackets first"><</div>
             <div class="brackets">&gt;</div>
         </div>
     </div>
 </aside>
-<div id="post" class="index">
+<div id="post">
     <div class="pjax">
-        <article class="index">
-            <div class="toc-ref">
+        <article id="post-DevOps实践-CI" class="article article-type-post" itemscope itemprop="blogPost">
     
+        <h1 class="article-title">DevOps实践-gitlab CI集成</h1>
+    
+    <div class="article-meta">
         
+        
+        
+        <span class="book">
+            <i class="iconfont icon-category"></i>
+            
+            
+            <a  data-rel="DevOps">DevOps</a>
+            
+        </span>
+        
+        
+        <span class="tag">
+            <i class="iconfont icon-tag"></i>
+            
+            <a class="color3">CI/CD工具</a>
+            
+        </span>
+        
+    </div>
+    <div class="article-meta">
+        
+            Created At : <time class="date" title='Updated At: 2024-11-19 14:11:31'>2024-11-19 11:29</time>
+        
+    </div>
+    <div class="article-meta">
+        
+        
+        <span id="busuanzi_container_page_pv">
+            Views 👀 :<span id="busuanzi_value_page_pv">
+                <span class="count-comment">
+                    <span class="spinner">
+                      <div class="cube1"></div>
+                      <div class="cube2"></div>
+                    </span>
+                </span>
+            </span>
+        </span>
+        
+        
+    </div>
+    
+    <div class="toc-ref">
+    
+        <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#CI-CD-Pipeline"><span class="toc-text">CI&#x2F;CD Pipeline</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#CI%E5%AE%9E%E8%B7%B5"><span class="toc-text">CI实践</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%89%8D%E6%9C%9F%E5%87%86%E5%A4%87"><span class="toc-text">前期准备</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#gitlab-runner%E5%AE%89%E8%A3%85"><span class="toc-text">gitlab-runner安装</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#gitlab-runner-register-%E6%B3%A8%E5%86%8C%E4%B8%8Brunner"><span class="toc-text">gitlab-runner register 注册下runner</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%96%B0%E5%BB%BAgitlab-yml"><span class="toc-text">新建gitlab.yml</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#gitlab-ci-yml-%E9%85%8D%E7%BD%AE%E5%8F%82%E6%95%B0"><span class="toc-text">.gitlab-ci.yml 配置参数</span></a></li></ol>
     
 <style>
     .left-col .switch-btn,
@@ -393,11 +439,165 @@
     }
 </style>
 </div>
-            <p>- </p>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>最近在安全平台开发过程中，希望使开发流程更加规范和自动化。于是了解了下CI&#x2F;CD相关知识。</p>
+<h2 id="CI-CD-Pipeline"><a href="#CI-CD-Pipeline" class="headerlink" title="CI&#x2F;CD Pipeline"></a>CI&#x2F;CD Pipeline</h2><p>简单介绍下CI&#x2F;CD Pipeline，提到DevOps，很多人就想到了CI&#x2F;CD Pipeline，甚至很多个人或者企业认为完成了CI&#x2F;CD Pipeline就等于实现了DevOps。<br>Pipeline 指管道或者流水线，类似于工厂里的生产线，原料从一端输入，中间经过多个工作中心，一个工作中心的输出作为下一个工作中心的输入，最终在另一端输出高质量的产品。CI&#x2F;CD Pipeline 指CI&#x2F;CD的流水线，在输入端输入源码，经过既定工作流，最后在输出端输出对用户有价值的产品。从字面就能看出侧重点持续、流水线。</p>
+<h2 id="CI实践"><a href="#CI实践" class="headerlink" title="CI实践"></a>CI实践</h2><p>目前比较常用的CI工具有jenkins和gitlab-runner。由于平常使用gitlab作为代码仓库，于是想通过gitlab-runner实现项目集成CI的</p>
+<h3 id="前期准备"><a href="#前期准备" class="headerlink" title="前期准备"></a>前期准备</h3><p>gitlab仓库<br>CI项目</p>
+<h3 id="gitlab-runner安装"><a href="#gitlab-runner安装" class="headerlink" title="gitlab-runner安装"></a>gitlab-runner安装</h3><p>gitlab进行CI的两个重要部分就在于一个Gitlab-Runner(可以镜像部署)，以及在你要CI的项目下的.gitlab-ci.yml</p>
+<p>可以把.gitlab-ci.yml里写的是你要CI时执行的操作，而执行者是通过Gitlab-Runner去执行的，将执行结果返回给gitlab。<br>1.拉取gitlab-runner镜像</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker pull /gitlab/gitlab-runner:latest 拉不下来可以用一个镜像加速地址 </span><br></pre></td></tr></table></figure>
 
-        </article>
-        
-        
+<p>2.启动容器</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">docker run -d --name gitlab-runner --restart=always -v /var/run/docker.sock:/var/run/docker.sock -v /home/gitlab-runner/config:/etc/gitlab-runner /gitlab/gitlab-runner:latest</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">-v 挂载socker到容器，是因为后续常用的要通过Gitlab-Runner去执行的操作一般为(docker或者shell)如果是镜像则挂载，脚本可以不挂载。</span><br><span class="line">/etc/gitlab-runner/目录下是gitlab-runner的配置文件，不需要在宿主机配置Gitlab-Runner可以不挂</span><br></pre></td></tr></table></figure>
+
+<ol start="3">
+<li><p>gitlab-runner 注册</p>
+<p>先查看下命令 gitlab-runner -h</p>
+<p><img src="https://prefect12.oss-cn-beijing.aliyuncs.com/11-19-1.png"></p>
+</li>
+</ol>
+<h3 id="gitlab-runner-register-注册下runner"><a href="#gitlab-runner-register-注册下runner" class="headerlink" title="gitlab-runner register 注册下runner"></a>gitlab-runner register 注册下runner</h3><p>先去gitlab获取要输入的token和服务地址</p>
+<p><img src="https://prefect12.oss-cn-beijing.aliyuncs.com/11-19-2.jpg"></p>
+<p>gitlab-runner register  注册要CI项目的runner,注意tag要在.gitlab-ci.yml用到，executor执行器，设置docker的话需要将宿主机docker.sock挂载到容器，docker image指定要执行操作的基础镜像</p>
+<p><img src="https://prefect12.oss-cn-beijing.aliyuncs.com/11-19-5.jpg"></p>
+<p>注册runner后可以在&#x2F;etc&#x2F;gitlab-runner&#x2F;config.toml 查看配置文件,</p>
+<p><img src="https://prefect12.oss-cn-beijing.aliyuncs.com/11-19-7.jpg"></p>
+<p>gitlab-runner 在执行操作调用基础镜像时默认是拉去镜像，通过在设置pull_policy &#x3D; [“if-not-present”] 指定使用本地镜像</p>
+<h3 id="新建gitlab-yml"><a href="#新建gitlab-yml" class="headerlink" title="新建gitlab.yml"></a>新建gitlab.yml</h3><p>在要CI的项目里新增.gitlab.yml文件，样例文件内容比较简单</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">before_script:</span><br><span class="line">  - echo &quot;Before script section&quot;</span><br><span class="line">  - echo &quot;For example you might run an update here or install a build dependency&quot;</span><br><span class="line">  - echo &quot;Or perhaps you might print out some debugging details&quot;</span><br><span class="line"></span><br><span class="line">after_script:</span><br><span class="line">  - echo &quot;After script section&quot;</span><br><span class="line">  - echo &quot;For example you might do some cleanup here&quot;</span><br><span class="line"></span><br><span class="line">build1:</span><br><span class="line">  stage: build</span><br><span class="line">  before_script:</span><br><span class="line">    - echo &quot;Before script in build stage that overwrited the globally defined before_script&quot;</span><br><span class="line">    - echo &quot;Install cloc:A tool to count lines of code in various languages from a given directory.&quot;</span><br><span class="line">  after_script:</span><br><span class="line">    - echo &quot;After script in build stage that overwrited the globally defined after_script&quot;</span><br><span class="line">  script:</span><br><span class="line">    - echo &quot;Do your build here&quot;</span><br><span class="line">  tags:</span><br><span class="line">    - test1</span><br></pre></td></tr></table></figure>
+
+<p>改动CI项目内容，进行上传，他就会调用我们注册的gitlab-runner执行CI操作,查看Pipelines获取相关状态</p>
+<p><img src="https://prefect12.oss-cn-beijing.aliyuncs.com/11-19-9.png"></p>
+<p>jobs查看执行日志详情，可以看到他会去先启动我们设置的centos:7镜像，然后根据.gitlab-ci.yml里的语法操作去执行命令</p>
+<p><img src="https://prefect12.oss-cn-beijing.aliyuncs.com/11-19-11.png"></p>
+<h2 id="gitlab-ci-yml-配置参数"><a href="#gitlab-ci-yml-配置参数" class="headerlink" title=".gitlab-ci.yml 配置参数"></a><a target="_blank" rel="noopener" href="https://meigit.readthedocs.io/en/latest/gitlab_ci_.gitlab-ci.yml_detail.html#id38"><code>.gitlab-ci.yml</code> 配置参数</a></h2><table>
+<thead>
+<tr>
+<th>关键字</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>script</td>
+<td>必须参数，运行器需要执行的脚本</td>
+</tr>
+<tr>
+<td>image</td>
+<td>使用Docker image镜像</td>
+</tr>
+<tr>
+<td>services</td>
+<td>使用Docker services镜像</td>
+</tr>
+<tr>
+<td>before_script</td>
+<td>作业执行前需要执行的命令</td>
+</tr>
+<tr>
+<td>after_script</td>
+<td>作业执行后需要执行的命令</td>
+</tr>
+<tr>
+<td>stages</td>
+<td>定义流水线所有的阶段</td>
+</tr>
+<tr>
+<td>stage</td>
+<td>定义作业所处流水线的阶段(默认test阶段)</td>
+</tr>
+<tr>
+<td>only</td>
+<td>限制作业在什么时候创建</td>
+</tr>
+<tr>
+<td>except</td>
+<td>限制作业在什么时候不创建</td>
+</tr>
+<tr>
+<td>tags</td>
+<td>作用使用的Runner运行器的标签列表</td>
+</tr>
+<tr>
+<td>allow_failure</td>
+<td>允许作业失败，失败的作业不影响提交的状态</td>
+</tr>
+<tr>
+<td>when</td>
+<td>什么时候运行作业</td>
+</tr>
+<tr>
+<td>environment</td>
+<td>作用部署的环境名称</td>
+</tr>
+<tr>
+<td>cache</td>
+<td>指定需要在job之间缓存的文件或目录</td>
+</tr>
+<tr>
+<td>artifacts</td>
+<td>归档文件列表，指定成功后应附加到job的文件和目录的列表</td>
+</tr>
+<tr>
+<td>dependencies</td>
+<td>当前作业依赖的其他作业，你可以使用依赖作业的归档文件</td>
+</tr>
+<tr>
+<td>coverage</td>
+<td>作业的代码覆盖率</td>
+</tr>
+<tr>
+<td>retry</td>
+<td>作业失败时，可以自动执行多少次</td>
+</tr>
+<tr>
+<td>parallel</td>
+<td>指定并行运行的作业实例</td>
+</tr>
+<tr>
+<td>trigger</td>
+<td>定义下游流水线的触发器</td>
+</tr>
+<tr>
+<td>include</td>
+<td>作业加载其他YAML文件</td>
+</tr>
+<tr>
+<td>extends</td>
+<td>控制实体从哪里继承</td>
+</tr>
+<tr>
+<td>pages</td>
+<td>上传GitLab Pages的结果</td>
+</tr>
+<tr>
+<td>retry</td>
+<td>作业失败时，可以自动执行多少次</td>
+</tr>
+<tr>
+<td>variables</td>
+<td>定义环境变量</td>
+</tr>
+</tbody></table>
+
+      
+       <hr><span style="font-style: italic;color: gray;"> 转载请注明来源. </span>
+    </div>
+</article>
+
+
+
+
+
+
+
+    
+
+
+
+
     </div>
     <div class="copyright">
         <p class="footer-entry">
@@ -406,11 +606,11 @@
 
 
     </div>
-</div>
-<div class="full-toc">
-    <button class="full" data-title="Toggle full screen shortcut key s"><span class="min "></span></button>
+    <div class="full-toc">
+        <button class="full" data-title="Toggle full screen shortcut key s"><span class="min "></span></button>
 <a class="" id="rocket" ></a>
 
+    </div>
 </div>
 
 </body>
