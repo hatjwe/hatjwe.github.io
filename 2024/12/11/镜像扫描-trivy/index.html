@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>镜像扫描-trivy分析 | Hexo</title>
+  <meta name="keywords" content=" 镜像扫描 ">
+  <meta name="description" content="镜像扫描-trivy分析 | Hexo">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="description" content="镜像扫描产品调研，扫描能力分析。 syft镜像扫描流程分析 SyftCLI工具和Go库，用于从容器映像和文件系统生成软件BOM表（SBOM）与grype结合使用进行漏洞扫描。可以通过单独的Syft生成SBOM清单，也可以通过grype扫描镜像漏洞。grype对容器内文件、依赖扫描方式是通过syft，接下来是相关流程。 镜像解析1.1数据预处理我们主要的输入源为path&#x2F;to&#x2F;i">
+<meta property="og:type" content="article">
+<meta property="og:title" content="镜像扫描-syft分析">
+<meta property="og:url" content="http://example.com/2024/12/11/%E9%95%9C%E5%83%8F%E6%89%AB%E6%8F%8F-syft/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="镜像扫描产品调研，扫描能力分析。 syft镜像扫描流程分析 SyftCLI工具和Go库，用于从容器映像和文件系统生成软件BOM表（SBOM）与grype结合使用进行漏洞扫描。可以通过单独的Syft生成SBOM清单，也可以通过grype扫描镜像漏洞。grype对容器内文件、依赖扫描方式是通过syft，接下来是相关流程。 镜像解析1.1数据预处理我们主要的输入源为path&#x2F;to&#x2F;i">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://prefect12.oss-cn-beijing.aliyuncs.com/12-11-6.png">
+<meta property="og:image" content="https://s3.bmp.ovh/imgs/2023/01/10/be8498acf3704785.png">
+<meta property="og:image" content="https://s3.bmp.ovh/imgs/2023/01/12/5d418f49e7cd4b72.png">
+<meta property="og:image" content="https://s3.bmp.ovh/imgs/2023/01/12/1a5260496840ce69.png">
+<meta property="og:image" content="https://s3.bmp.ovh/imgs/2023/01/12/0b56029ba0be35c9.png">
+<meta property="article:published_time" content="2024-12-11T06:25:00.605Z">
+<meta property="article:modified_time" content="2024-12-11T06:26:57.155Z">
+<meta property="article:author" content="hatjwe">
+<meta property="article:tag" content="镜像扫描">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://prefect12.oss-cn-beijing.aliyuncs.com/12-11-6.png">
+
+
+<link rel="icon" href="/img/avatar1.jpg">
+
+<link href="/css/style.css?v=1.1.0" rel="stylesheet">
+
+<link href="/css/hl_theme/atom-light.css?v=1.1.0" rel="stylesheet">
+
+<link href="//cdn.jsdelivr.net/npm/animate.css@4.1.0/animate.min.css" rel="stylesheet">
+
+<script src="//cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js"></script>
+<script src="/js/titleTip.js?v=1.1.0" ></script>
+
+<script src="//cdn.jsdelivr.net/npm/highlightjs@9.16.2/highlight.pack.min.js"></script>
+<script>
+    hljs.initHighlightingOnLoad();
+</script>
+
+<script src="//cdn.jsdelivr.net/npm/nprogress@0.2.0/nprogress.min.js"></script>
+
+
+
+<script src="//cdn.jsdelivr.net/npm/jquery.cookie@1.4.1/jquery.cookie.min.js" ></script>
+
+<script src="/js/iconfont.js?v=1.1.0" ></script>
+
+<meta name="generator" content="Hexo 7.3.0"></head>
+<div style="display: none">
+  <input class="theme_disqus_on" value="false">
+  <input class="theme_preload_comment" value="">
+  <input class="theme_blog_path" value="">
+  <input id="theme_shortcut" value="true" />
+  <input id="theme_highlight_on" value="true" />
+  <input id="theme_code_copy" value="true" />
+</div>
+
+
+
+<body>
+<aside class="nav">
+    <div class="nav-left">
+        <a href="/"
+   class="avatar_target">
+    <img class="avatar"
+         src="/img/avatar1.jpg"/>
+</a>
+<div class="author">
+    <span>hatjwe</span>
+</div>
+
+<div class="icon">
+    
+</div>
+
+
+
+
+
+<ul>
+    <li>
+        <div class="all active" data-rel="All">All
+            
+                <small>(9)</small>
+            
+        </div>
+    </li>
+    
+        
+            
+                
+    <li>
+        <div data-rel="云原生">
+            <i class="fold iconfont icon-right"></i>
+            云原生
+            <small>(4)</small>
+        </div>
+        
+            <ul class="sub hide">
+                
+                    
+    <li>
+        <div data-rel="云原生&lt;---&gt;k8s">
+            
+            k8s
+            <small>(1)</small>
+        </div>
+        
+    </li>
+
+                
+                    
+    <li>
+        <div data-rel="云原生&lt;---&gt;RBAC">
+            
+            RBAC
+            <small>(1)</small>
+        </div>
+        
+    </li>
+
+                
+            </ul>
+        
+    </li>
+
+            
+        
+    
+        
+            
+                
+    <li>
+        <div data-rel="主机安全">
+            <i class="fold iconfont icon-right"></i>
+            主机安全
+            <small>(1)</small>
+        </div>
+        
+            <ul class="sub hide">
+                
+                    
+    <li>
+        <div data-rel="主机安全&lt;---&gt;Capsule8">
+            
+            Capsule8
+            <small>(1)</small>
+        </div>
+        
+    </li>
+
+                
+            </ul>
+        
+    </li>
+
+            
+        
+    
+        
+            
+        
+    
+        
+            
+                
+    <li>
+        <div data-rel="DevOps">
+            
+            DevOps
+            <small>(2)</small>
+        </div>
+        
+    </li>
+
+            
+        
+    
+        
+            
+        
+    
+        
+            
+                
+    <li>
+        <div data-rel="linux运维">
+            
+            linux运维
+            <small>(1)</small>
+        </div>
+        
+    </li>
+
+            
+        
+    
+        
+            
+        
+    
+</ul>
+<div class="left-bottom">
+    <div class="menus">
+        
+            
+            
+            
+    </div>
+    <div>
+        
+            <a class="about  hasFriend  site_url"
+               
+               href="/about">About</a>
+        
+        <a style="width: 50%"
+                
+                                           class="friends">Friends</a>
+        
+    </div>
+</div>
+<input type="hidden" id="yelog_site_posts_number" value="9">
+
+<div style="display: none">
+    <span id="busuanzi_value_site_uv"></span>
+    <span id="busuanzi_value_site_pv"></span>
+</div>
+
+    </div>
+    <div class="nav-right">
+        <div class="friends-area">
+    <div class="friends-title">
+        Links
+        <i class="iconfont icon-left"></i>
+    </div>
+    <div class="friends-content">
+        <ul>
+            
+        </ul>
+    </div>
+</div>
+        <div class="title-list">
+    <div class="right-top">
+        <div id="default-panel">
+            <i class="iconfont icon-search" data-title="search shortcut key i"></i>
+            <div class="right-title">All</div>
+            <i class="iconfont icon-file-tree" data-title="switch to outline view shortcut key w"></i>
+        </div>
+        <div id="search-panel">
+            <i class="iconfont icon-left" data-title="return"></i>
+            <input id="local-search-input" autocomplete="off"/>
+            <label class="border-line" for="input"></label>
+            <i class="iconfont icon-case-sensitive" data-title="case sensitive"></i>
+            <i class="iconfont icon-tag" data-title="label"></i>
+        </div>
+        <div id="outline-panel" style="display: none">
+            <div class="right-title">outline</div>
+            <i class="iconfont icon-list" data-title="switch to article list"></i>
+        </div>
+    </div>
+
+    <div class="tags-list">
+    <input id="tag-search" />
+    <div class="tag-wrapper">
+        
+            <li class="article-tag-list-item">
+                <i class="iconfont icon-tag"></i><a>镜像扫描</a>
+            </li>
+        
+            <li class="article-tag-list-item">
+                <i class="iconfont icon-tag"></i><a>日志审计</a>
+            </li>
+        
+            <li class="article-tag-list-item">
+                <i class="iconfont icon-tag"></i><a>Capsule8</a>
+            </li>
+        
+            <li class="article-tag-list-item">
+                <i class="iconfont icon-tag"></i><a>CI/CD工具</a>
+            </li>
+        
+            <li class="article-tag-list-item">
+                <i class="iconfont icon-tag"></i><a>linux命令</a>
+            </li>
+        
+            <li class="article-tag-list-item">
+                <i class="iconfont icon-tag"></i><a>RBAC</a>
+            </li>
+        
+    </div>
+
+</div>
+
+    
+    <nav id="title-list-nav">
+        
+        
+        <a  class="All 云原生 "
+           href="/2024/12/11/%E9%95%9C%E5%83%8F%E6%89%AB%E6%8F%8F-syft/"
+           data-tag="镜像扫描"
+           data-author="" >
+            <span class="post-title" title="镜像扫描-syft分析">镜像扫描-syft分析</span>
+            <span class="post-date" title="2024-12-11 14:25:00">2024/12/11</span>
+        </a>
+        
+        
+        <a  class="All 云原生 "
+           href="/2024/12/11/%E9%95%9C%E5%83%8F%E6%89%AB%E6%8F%8F-trivy/"
+           data-tag="镜像扫描"
+           data-author="" >
+            <span class="post-title" title="镜像扫描-trivy分析">镜像扫描-trivy分析</span>
+            <span class="post-date" title="2024-12-11 14:12:46">2024/12/11</span>
+        </a>
+        
+        
+        <a  class="All DevOps "
+           href="/2024/11/19/DevOps%E5%AE%9E%E8%B7%B5-CI/"
+           data-tag="CI/CD工具"
+           data-author="" >
+            <span class="post-title" title="DevOps实践-gitlab CI集成">DevOps实践-gitlab CI集成</span>
+            <span class="post-date" title="2024-11-19 11:29:00">2024/11/19</span>
+        </a>
+        
+        
+        <a  class="All "
+           href="/2024/11/18/Redis%E9%98%9F%E5%88%97%E6%A8%A1%E5%BC%8F/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title=""></span>
+            <span class="post-date" title="2024-11-18 10:30:26">2024/11/18</span>
+        </a>
+        
+        
+        <a  class="All DevOps "
+           href="/2024/11/06/DevOps%E5%AE%9E%E8%B7%B5/"
+           data-tag="CI/CD工具"
+           data-author="" >
+            <span class="post-title" title="DevOps实践-Watchtower一键全自动的watchtower">DevOps实践-Watchtower一键全自动的watchtower</span>
+            <span class="post-date" title="2024-11-06 17:03:02">2024/11/06</span>
+        </a>
+        
+        
+        <a  class="All 云原生 k8s "
+           href="/2024/10/12/K8s%E6%97%A5%E5%BF%97%E5%AE%A1%E8%AE%A1%E8%B0%83%E7%A0%94/"
+           data-tag="日志审计"
+           data-author="" >
+            <span class="post-title" title="k8s日志审计调研">k8s日志审计调研</span>
+            <span class="post-date" title="2024-10-12 16:47:26">2024/10/12</span>
+        </a>
+        
+        
+        <a  class="All linux运维 "
+           href="/2024/10/09/%E7%A3%81%E7%9B%98%E5%88%86%E5%8C%BA/"
+           data-tag="linux命令"
+           data-author="" >
+            <span class="post-title" title="磁盘挂载分区">磁盘挂载分区</span>
+            <span class="post-date" title="2024-10-09 11:56:07">2024/10/09</span>
+        </a>
+        
+        
+        <a  class="All 云原生 RBAC "
+           href="/2024/10/05/RBAC/"
+           data-tag="RBAC"
+           data-author="" >
+            <span class="post-title" title="K8s之RBAC">K8s之RBAC</span>
+            <span class="post-date" title="2024-10-05 21:49:22">2024/10/05</span>
+        </a>
+        
+        
+        <a  class="All 主机安全 Capsule8 "
+           href="/2024/10/05/ecaplute8/"
+           data-tag="Capsule8"
+           data-author="" >
+            <span class="post-title" title="Capsule8分析 (一)">Capsule8分析 (一)</span>
+            <span class="post-date" title="2024-10-05 21:49:22">2024/10/05</span>
+        </a>
+        
+        <div id="no-item-tips">
+
+        </div>
+    </nav>
+    <div id="outline-list">
+    </div>
+</div>
+
+    </div>
+    <div class="hide-list">
+        <div class="semicircle" data-title="Toggle full screen shortcut key s">
+            <div class="brackets first"><</div>
+            <div class="brackets">&gt;</div>
+        </div>
+    </div>
+</aside>
+<div id="post">
+    <div class="pjax">
+        <article id="post-镜像扫描-trivy" class="article article-type-post" itemscope itemprop="blogPost">
+    
+        <h1 class="article-title">镜像扫描-trivy分析</h1>
+    
+    <div class="article-meta">
+        
+        
+        
+        <span class="book">
+            <i class="iconfont icon-category"></i>
+            
+            
+            <a  data-rel="云原生">云原生</a>
+            
+        </span>
+        
+        
+        <span class="tag">
+            <i class="iconfont icon-tag"></i>
+            
+            <a class="color5">镜像扫描</a>
+            
+        </span>
+        
+    </div>
+    <div class="article-meta">
+        
+            Created At : <time class="date" title='Updated At: 2024-12-11 14:23:09'>2024-12-11 14:12</time>
+        
+    </div>
+    <div class="article-meta">
+        
+        
+        <span id="busuanzi_container_page_pv">
+            Views 👀 :<span id="busuanzi_value_page_pv">
+                <span class="count-comment">
+                    <span class="spinner">
+                      <div class="cube1"></div>
+                      <div class="cube2"></div>
+                    </span>
+                </span>
+            </span>
+        </span>
+        
+        
+    </div>
+    
+    <div class="toc-ref">
+    
+        <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#trivy%E9%95%9C%E5%83%8F%E6%89%AB%E6%8F%8F%E6%B5%81%E7%A8%8B%E5%88%86%E6%9E%90"><span class="toc-text">trivy镜像扫描流程分析</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%95%9C%E5%83%8F%E6%89%AB%E6%8F%8F%E6%A8%A1%E5%BC%8F"><span class="toc-text">镜像扫描模式</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%95%9C%E5%83%8F%E5%9F%BA%E6%9C%AC%E4%BF%A1%E6%81%AF%E8%AF%BB%E5%8F%96"><span class="toc-text">镜像基本信息读取</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%95%9C%E5%83%8Flayer%E5%B1%82%E4%BF%A1%E6%81%AF%E8%AF%BB%E5%8F%96"><span class="toc-text">镜像layer层信息读取</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%96%87%E4%BB%B6%E7%B1%BB%E5%88%AB%E7%AD%9B%E9%80%89%E5%8F%8A%E7%89%88%E6%9C%AC%E5%8F%B7%E8%AF%86%E5%88%AB"><span class="toc-text">文件类别筛选及版本号识别</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%BC%8F%E6%B4%9E%E6%89%AB%E6%8F%8F"><span class="toc-text">漏洞扫描</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%B7%BB%E5%8A%A0license%E6%B5%8B%E8%AF%95"><span class="toc-text">添加license测试</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#trivydb"><span class="toc-text">trivydb</span></a></li></ol>
+    
+<style>
+    .left-col .switch-btn,
+    .left-col .switch-area {
+        display: none;
+    }
+    .toc-level-3 i,
+    .toc-level-3 ol {
+        display: none !important;
+    }
+</style>
+</div>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>产品需要集成镜像扫描能力，调研后认为trivy能力最为符合，进行相关源码调研分析。</p>
+<h2 id="trivy镜像扫描流程分析"><a href="#trivy镜像扫描流程分析" class="headerlink" title="trivy镜像扫描流程分析"></a>trivy镜像扫描流程分析</h2><p>trivy更新较快，目前已支持容器内sca漏洞扫描,对这一部分进行分析。</p>
+<h2 id="镜像扫描模式"><a href="#镜像扫描模式" class="headerlink" title="镜像扫描模式"></a>镜像扫描模式</h2><p>镜像扫描初始化部分，主要通过opts.Input输入选项内容和 opts.ServerAddr 服务地址来判断几种扫描方式进行相应初始化，,但最后都会都会通过*runner接口下scanArtifact()进行扫描。<br><img src="https://s3.uuu.ovh/imgs/2022/11/18/58f57f29d3440337.png"></p>
+<h2 id="镜像基本信息读取"><a href="#镜像基本信息读取" class="headerlink" title="镜像基本信息读取"></a>镜像基本信息读取</h2><p>Scanner接口下的ScanArtifac()中s.artifact.Inspect(ctx)是比较重要的点，trivy在镜像扫描时如果没有缓存会在准备部分会生成一个空的fanal.db，通过s.artifact.Inspect(ctx)里的操作后将各种信息存储到fanal.db，然后后边的扫描操作都从fanal.db中读取需要的信息。进入Inspect(ctx context.Context) 这个方法在pkg&#x2F;fanal&#x2F;artifact&#x2F;image&#x2F;image.go中获取image.ID,Layer信息，将镜像ID和LayerID转换为缓存密钥等元数据。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br></pre></td><td class="code"><pre><span class="line">type Scanner struct &#123;</span><br><span class="line">	driver   Driver</span><br><span class="line">	artifact artifact.Artifact</span><br><span class="line">&#125;</span><br><span class="line">type Artifact interface &#123;</span><br><span class="line">	Inspect(ctx context.Context) (reference types.ArtifactReference, err error)</span><br><span class="line">	Clean(reference types.ArtifactReference) error</span><br><span class="line">&#125;</span><br><span class="line">func (s Scanner) ScanArtifact(ctx context.Context, options types.ScanOptions) (types.Report, error) &#123;</span><br><span class="line">	artifactInfo, err := s.artifact.Inspect(ctx) // 在这之前会创建一个final.db然后在这获取layer层信息这往下基本都是在读final.db里的数据了</span><br><span class="line">	if err != nil &#123;</span><br><span class="line">		return types.Report&#123;&#125;, xerrors.Errorf(&quot;failed analysis: %w&quot;, err)</span><br><span class="line">&#125;</span><br><span class="line">func (a Artifact) Inspect(ctx context.Context) (types.ArtifactReference, error) &#123;//详情这里</span><br><span class="line">	imageID, err := a.image.ID()</span><br><span class="line">	if err != nil &#123;</span><br><span class="line">		return types.ArtifactReference&#123;&#125;, xerrors.Errorf(&quot;unable to get the image ID: %w&quot;, err)</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	diffIDs, err := a.image.LayerIDs()</span><br><span class="line">	if err != nil &#123;</span><br><span class="line">		return types.ArtifactReference&#123;&#125;, xerrors.Errorf(&quot;unable to get layer IDs: %w&quot;, err)</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	configFile, err := a.image.ConfigFile()</span><br><span class="line">	if err != nil &#123;</span><br><span class="line">		return types.ArtifactReference&#123;&#125;, xerrors.Errorf(&quot;unable to get the image&#x27;s config file: %w&quot;, err)</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	// Debug</span><br><span class="line">	log.Logger.Debugf(&quot;Image ID: %s&quot;, imageID)</span><br><span class="line">	log.Logger.Debugf(&quot;Diff IDs: %v&quot;, diffIDs)</span><br><span class="line"></span><br><span class="line">	// Try retrieving a remote SBOM document</span><br><span class="line">	if res, err := a.retrieveRemoteSBOM(ctx); err == nil &#123;</span><br><span class="line">		// Found SBOM</span><br><span class="line">		return res, nil</span><br><span class="line">	&#125; else if !errors.Is(err, errNoSBOMFound) &#123;</span><br><span class="line">		// Fail on unexpected error, otherwise it falls into the usual scanning.</span><br><span class="line">		return types.ArtifactReference&#123;&#125;, xerrors.Errorf(&quot;remote SBOM fetching error: %w&quot;, err)</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	// Try to detect base layers.</span><br><span class="line">	baseDiffIDs := a.guessBaseLayers(diffIDs, configFile)</span><br><span class="line">	log.Logger.Debugf(&quot;Base Layers: %v&quot;, baseDiffIDs)</span><br><span class="line"></span><br><span class="line">	// Convert image ID and layer IDs to cache keys</span><br><span class="line">	imageKey, layerKeys, err := a.calcCacheKeys(imageID, diffIDs)</span><br><span class="line">	if err != nil &#123;</span><br><span class="line">		return types.ArtifactReference&#123;&#125;, err</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	// Parse histories and extract a list of &quot;created_by&quot;</span><br><span class="line">	layerKeyMap := a.consolidateCreatedBy(diffIDs, layerKeys, configFile)</span><br><span class="line"></span><br><span class="line">	missingImage, missingLayers, err := a.cache.MissingBlobs(imageKey, layerKeys)</span><br><span class="line">	if err != nil &#123;</span><br><span class="line">		return types.ArtifactReference&#123;&#125;, xerrors.Errorf(&quot;unable to get missing layers: %w&quot;, err)</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	missingImageKey := imageKey</span><br><span class="line">	if missingImage &#123;</span><br><span class="line">		log.Logger.Debugf(&quot;Missing image ID in cache: %s&quot;, imageID)</span><br><span class="line">	&#125; else &#123;</span><br><span class="line">		missingImageKey = &quot;&quot;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	if err = a.inspect(ctx, missingImageKey, missingLayers, baseDiffIDs, layerKeyMap); err != nil &#123;//这里进行layer层内扫描</span><br><span class="line">		return types.ArtifactReference&#123;&#125;, xerrors.Errorf(&quot;analyze error: %w&quot;, err)</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	return types.ArtifactReference&#123;</span><br><span class="line">		Name:    a.image.Name(),</span><br><span class="line">		Type:    types.ArtifactContainerImage,</span><br><span class="line">		ID:      imageKey,</span><br><span class="line">		BlobIDs: layerKeys,</span><br><span class="line">		ImageMetadata: types.ImageMetadata&#123;</span><br><span class="line">			ID:          imageID,</span><br><span class="line">			DiffIDs:     diffIDs,</span><br><span class="line">			RepoTags:    a.image.RepoTags(),</span><br><span class="line">			RepoDigests: a.image.RepoDigests(),</span><br><span class="line">			ConfigFile:  *configFile,</span><br><span class="line">		&#125;,</span><br><span class="line">	&#125;, nil</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="镜像layer层信息读取"><a href="#镜像layer层信息读取" class="headerlink" title="镜像layer层信息读取"></a>镜像layer层信息读取</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line">func (a Artifact) inspect(ctx context.Context, missingImage string, layerKeys, baseDiffIDs []string, layerKeyMap map[string]LayerInfo) error &#123;</span><br><span class="line">	go func(ctx context.Context, layerKey string) &#123;</span><br><span class="line">			layer := layerKeyMap[layerKey]</span><br><span class="line"></span><br><span class="line">			// If it is a base layer, secret scanning should not be performed.</span><br><span class="line">			var disabledAnalyers []analyzer.Type</span><br><span class="line">			if slices.Contains(baseDiffIDs, layer.DiffID) &#123;</span><br><span class="line">				disabledAnalyers = append(disabledAnalyers, analyzer.TypeSecret)</span><br><span class="line">			&#125;</span><br><span class="line"></span><br><span class="line">			layerInfo, err := a.inspectLayer(ctx, layer, disabledAnalyers)协程扫描layer信息</span><br><span class="line">			if err != nil &#123;</span><br><span class="line">				errCh &lt;- xerrors.Errorf(&quot;failed to analyze layer: %s : %w&quot;, layerInfo.DiffID, err)</span><br><span class="line">				return</span><br><span class="line">			&#125;</span><br><span class="line">			if err = a.cache.PutBlob(layerKey, layerInfo); err != nil &#123;</span><br><span class="line">				errCh &lt;- xerrors.Errorf(&quot;failed to store layer: %s in cache: %w&quot;, layerKey, err)</span><br><span class="line">				return</span><br><span class="line">			&#125;</span><br><span class="line">			if layerInfo.OS != nil &#123;</span><br><span class="line">				osFound = *layerInfo.OS</span><br><span class="line">			&#125;</span><br><span class="line">			done &lt;- struct&#123;&#125;&#123;&#125;</span><br><span class="line">		&#125;(ctx, k)</span><br><span class="line">&#125;</span><br><span class="line">func (a Artifact) inspectLayer(ctx context.Context, layerInfo LayerInfo, disabled []analyzer.Type) (types.BlobInfo, error) &#123;详情这里</span><br><span class="line">	// Prepare variables 初始化扫描信息</span><br><span class="line">	var wg sync.WaitGroup</span><br><span class="line">	opts := analyzer.AnalysisOptions&#123;Offline: true&#125;</span><br><span class="line">	result := analyzer.NewAnalysisResult()</span><br><span class="line">	limit := semaphore.NewWeighted(parallel)</span><br><span class="line">	// Walk a tar layer遍历压缩包中每一层layer</span><br><span class="line">	opqDirs, whFiles, err := a.walker.Walk(r, func(filePath string, info os.FileInfo, opener analyzer.Opener) error &#123;</span><br><span class="line">		if err = a.analyzer.AnalyzeFile(ctx, &amp;wg, limit, result, &quot;&quot;, filePath, info, opener, disabled, opts); err != nil &#123;//这里进行不同依赖语言文件，二进制文件等种类分类，然后调用go-dep-parse识别版本号</span><br><span class="line">			return xerrors.Errorf(&quot;failed to analyze %s: %w&quot;, filePath, err)</span><br><span class="line">		&#125;</span><br><span class="line">		return nil</span><br><span class="line">	&#125;)</span><br><span class="line">	&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="文件类别筛选及版本号识别"><a href="#文件类别筛选及版本号识别" class="headerlink" title="文件类别筛选及版本号识别"></a>文件类别筛选及版本号识别</h2><p>通过a.walker.Walk遍历了每一层的path标记了type随即进入a.analyzer.AnalyzeFile 根据type和info进行逻辑归并语言和文件路径。</p>
+<p>然后调用go-dep-parse的a.Analyze()识别版本号，在pkg&#x2F;fanal&#x2F;analyzer&#x2F;language&#x2F;下每种语言库都实现了Analyze方法</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line">for _, a := range ag.analyzers &#123;</span><br><span class="line">		//fmt.Println(&quot;disabled&quot;, disabled, cleanPath)</span><br><span class="line">		// Skip disabled analyzers</span><br><span class="line">		if slices.Contains(disabled, a.Type()) &#123;</span><br><span class="line">			continue</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		if !ag.filePatternMatch(a.Type(), cleanPath) &amp;&amp; !a.Required(cleanPath, info) &#123;</span><br><span class="line">			continue</span><br><span class="line">		&#125;</span><br><span class="line">		rc, err := opener()</span><br><span class="line">		if errors.Is(err, fs.ErrPermission) &#123;</span><br><span class="line">			log.Logger.Debugf(&quot;Permission error: %s&quot;, filePath)</span><br><span class="line">			break</span><br><span class="line">		&#125; else if err != nil &#123;</span><br><span class="line">			return xerrors.Errorf(&quot;unable to open %s: %w&quot;, filePath, err)</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		if err = limit.Acquire(ctx, 1); err != nil &#123;</span><br><span class="line">			return xerrors.Errorf(&quot;semaphore acquire: %w&quot;, err)</span><br><span class="line">		&#125;</span><br><span class="line">		wg.Add(1)</span><br><span class="line">		go func(a analyzer, rc dio.ReadSeekCloserAt) &#123;</span><br><span class="line">			defer limit.Release(1)</span><br><span class="line">			defer wg.Done()</span><br><span class="line">			defer rc.Close()</span><br><span class="line"></span><br><span class="line">			ret, err := a.Analyze(ctx, AnalysisInput&#123;//这里每个语言包都有interface接口</span><br><span class="line">				Dir:      dir,</span><br><span class="line">				FilePath: filePath,</span><br><span class="line">				Info:     info,</span><br><span class="line">				Content:  rc,</span><br><span class="line">				Options:  opts,</span><br><span class="line">			&#125;)</span><br></pre></td></tr></table></figure>
+<h2 id="漏洞扫描"><a href="#漏洞扫描" class="headerlink" title="漏洞扫描"></a>漏洞扫描</h2><p>转了一大圈后回到scanner我们可以接着往下走，接下来的进行漏洞扫描，fanal.db已经获取镜像内元数据信息不再为空了，这时我们要获取layer的相关信息及存放在数据库的blotID,用于后期查询。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">artifactInfo, err := s.artifact.Inspect(ctx) </span><br><span class="line">results, osFound, err := s.driver.Scan(ctx, artifactInfo.Name, artifactInfo.ID, artifactInfo.BlobIDs, options)</span><br></pre></td></tr></table></figure>
+
+<p>此时blot数据库内容，blot的路径获取通过pkg&#x2F;fanal&#x2F;cache&#x2F;fs.go GetBlob方法下View获取</p>
+<p><img src="https://s3.uuu.ovh/imgs/2022/11/18/c839806d80944769.png"></p>
+<p><img src="https://prefect12.oss-cn-beijing.aliyuncs.com/12-11-4.png"></p>
+<p>之后根据fanal.db 中的信息进行数据整理，去trivy.db查询漏洞信息</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line">type Package struct &#123;</span><br><span class="line">	ID         string   `json:&quot;,omitempty&quot;`</span><br><span class="line">	Name       string   `json:&quot;,omitempty&quot;`</span><br><span class="line">	Version    string   `json:&quot;,omitempty&quot;`</span><br><span class="line">	Release    string   `json:&quot;,omitempty&quot;`</span><br><span class="line">	Epoch      int      `json:&quot;,omitempty&quot;`</span><br><span class="line">	Arch       string   `json:&quot;,omitempty&quot;`</span><br><span class="line">	SrcName    string   `json:&quot;,omitempty&quot;`</span><br><span class="line">	SrcVersion string   `json:&quot;,omitempty&quot;`</span><br><span class="line">	SrcRelease string   `json:&quot;,omitempty&quot;`</span><br><span class="line">	SrcEpoch   int      `json:&quot;,omitempty&quot;`</span><br><span class="line">	Licenses   []string `json:&quot;,omitempty&quot;`</span><br><span class="line"></span><br><span class="line">	Modularitylabel string     `json:&quot;,omitempty&quot;` // only for Red Hat based distributions</span><br><span class="line">	BuildInfo       *BuildInfo `json:&quot;,omitempty&quot;` // only for Red Hat</span><br><span class="line"></span><br><span class="line">	Ref      string `json:&quot;,omitempty&quot;` // identifier which can be used to reference the component elsewhere</span><br><span class="line">	Indirect bool   `json:&quot;,omitempty&quot;` // this package is direct dependency of the project or not</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">// Detect scans and returns vulnerabilities of library</span><br><span class="line">// 检测扫描并返回库的漏洞</span><br><span class="line">func Detect(libType string, pkgs []ftypes.Package) ([]types.DetectedVulnerability, error) &#123;</span><br><span class="line">	fmt.Println(&quot;Libtype&quot;, libType)</span><br><span class="line">	driver, err := NewDriver(libType)</span><br><span class="line">	if err != nil &#123;</span><br><span class="line">		return nil, xerrors.Errorf(&quot;failed to initialize a driver: %w&quot;, err)</span><br><span class="line">	&#125;</span><br><span class="line">	//licencs.Init(libType, pkgs)//这里获取libType和组件信息去sca数据库查询licencs，先配置数据库信息在开启在pkg/custom</span><br><span class="line">	vulns, err := detect(driver, pkgs)</span><br><span class="line">	if err != nil &#123;</span><br><span class="line">		return nil, xerrors.Errorf(&quot;failed to scan %s vulnerabilities: %w&quot;, driver.Type(), err)</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	return vulns, nil</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<h2 id="添加license测试"><a href="#添加license测试" class="headerlink" title="添加license测试"></a>添加license测试</h2><p>要想在镜像sca扫描时添加上组件的licencs,首先要获取语言种类及语言文件地址等信息，通过上述Detect()方法我们可以拿到解析版本号后第一手的数据，通过libType获取语言中类，Package结构体包含信息获取name和version去数据库查询对应license就可以了。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">// pkg/custom_licencs  </span><br><span class="line">func Init(libType string, pkgs []ftypes.Package) &#123;</span><br><span class="line">	str, ty := Select_table(libType)</span><br><span class="line">	if ty &#123;</span><br><span class="line">	</span><br><span class="line">		fmtVulneList := make([]*db.Pkg_info, 0)</span><br><span class="line">		connect := db.Mongodb(db.Dbname, str)</span><br><span class="line">		for _, v := range pkgs &#123;</span><br><span class="line">			tmp := db.Mongo_result(v, connect)</span><br><span class="line">			fmtVulneList = append(fmtVulneList, &amp;db.Pkg_info&#123;</span><br><span class="line">				RealName: v.Name,</span><br><span class="line">				Version:  tmp.Version,</span><br><span class="line">				License:  tmp.License,</span><br><span class="line">			&#125;)</span><br><span class="line">	</span><br><span class="line">		&#125;</span><br><span class="line">		fmt.Println(table.Table(fmtVulneList))</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="trivydb"><a href="#trivydb" class="headerlink" title="trivydb"></a>trivydb</h2><p>我们扫描结果来自trivy.db然而trivy.db底层使用了boltdb数据库进行数据储存。</p>
+<p><code>boltdb</code>是一个键值数据库；</p>
+<p><code>bucket</code>可以理解为是树节点，一个节点又可以往下延伸出很多子节点；</p>
+<p>子节点既可以是<code>key</code>，也可以是<code>bucket</code>继续嵌套；</p>
+<p><code>trivy</code>的数据库就是由<code>bucket-&gt;bucket-&gt;key-&gt;value</code>组成的；</p>
+<p>具体我们可以在pkg&#x2F;db&#x2F;db.go看到查询trivy.db的操作主要是boltd封装的语法。这边可以通过demo输入检测参数去数据库进行查找镜像组件依赖是否存在漏洞验证</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> main</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> (</span><br><span class="line">	<span class="string">&quot;fmt&quot;</span></span><br><span class="line">	bolt <span class="string">&quot;go.etcd.io/bbolt&quot;</span></span><br><span class="line">)</span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">Searchbucket</span><span class="params">()</span></span>  &#123;</span><br><span class="line">	value := <span class="keyword">map</span>[<span class="type">string</span>][]<span class="type">byte</span>&#123;&#125;</span><br><span class="line">	db, err := bolt.Open(<span class="string">&quot;trivy.db&quot;</span>, <span class="number">0600</span>, <span class="literal">nil</span>)<span class="comment">//打开bolt文件</span></span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">		fmt.Println(<span class="string">&quot;failed to open blot database&quot;</span>)</span><br><span class="line">		<span class="keyword">return</span></span><br><span class="line">	&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">		fmt.Println(<span class="string">&quot;blot database open succeed&quot;</span>)</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	_ = db.View(<span class="function"><span class="keyword">func</span><span class="params">(tx *bolt.Tx)</span></span> <span class="type">error</span> &#123;</span><br><span class="line">		b := tx.Bucket([]<span class="type">byte</span>(<span class="string">&quot;python-safety-db&quot;</span>))<span class="comment">//root桶名字模拟trivy查询组件漏洞</span></span><br><span class="line"></span><br><span class="line">		c := b.Cursor()</span><br><span class="line">		<span class="keyword">for</span> k, v := c.First(); k != <span class="literal">nil</span>; k, v = c.Next() &#123;</span><br><span class="line">			<span class="comment">//fmt.Printf(&quot;key=%s, value=%s\n&quot;, k, v)//输出/root桶下key</span></span><br><span class="line">		&#125;</span><br><span class="line">		nested := b.Bucket([]<span class="type">byte</span>(<span class="string">&quot;pip&quot;</span>))<span class="comment">//子桶名字</span></span><br><span class="line">		_ = nested.ForEach(<span class="function"><span class="keyword">func</span><span class="params">(k, v []<span class="type">byte</span>)</span></span> <span class="type">error</span> &#123;</span><br><span class="line">			fmt.Println(<span class="string">&quot;kv&quot;</span>,<span class="type">string</span>(k),<span class="type">string</span>(v))<span class="comment">//输出子桶下key</span></span><br><span class="line">			value[<span class="type">string</span>(k)] = v</span><br><span class="line">			<span class="keyword">return</span> <span class="literal">nil</span></span><br><span class="line">		&#125;)</span><br><span class="line">		<span class="keyword">return</span> <span class="literal">nil</span></span><br><span class="line">	&#125;)</span><br><span class="line"></span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span>  &#123;</span><br><span class="line">	Searchbucket()</span><br><span class="line"></span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+
+      
+       <hr><span style="font-style: italic;color: gray;"> 转载请注明来源. </span>
+    </div>
+</article>
+
+
+
+
+
+
+
+    
+
+
+
+
+    </div>
+    <div class="copyright">
+        <p class="footer-entry">
+    ©2022-2024
+</p>
+
+
+    </div>
+    <div class="full-toc">
+        <button class="full" data-title="Toggle full screen shortcut key s"><span class="min "></span></button>
+<a class="" id="rocket" ></a>
+
+    </div>
+</div>
+
+</body>
+<script src="/js/jquery.pjax.js?v=1.1.0" ></script>
+
+<script src="/js/script.js?v=1.1.0" ></script>
+<script>
+    var img_resize = 'default';
+    function initArticle() {
+        /*渲染对应的表格样式*/
+        
+            $("#post .pjax table").addClass("green_title");
+        
+
+        /*渲染打赏样式*/
+        
+
+        /*高亮代码块行号*/
+        
+
+        /*访问数量*/
+        
+        $.getScript("//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js");
+        
+
+        /*代码高亮，行号对齐*/
+        $('.pre-numbering').css('line-height',$('.has-numbering').css('line-height'));
+
+        
+        
+    }
+
+    /*打赏页面隐藏与展示*/
+    
+
+</script>
+
+<!--加入行号的高亮代码块样式-->
+
+<!--自定义样式设置-->
+<style>
+    
+    
+    .nav {
+        width: 542px;
+    }
+    .nav.fullscreen {
+        margin-left: -542px;
+    }
+    .nav-left {
+        width: 120px;
+    }
+    
+    
+    @media screen and (max-width: 1468px) {
+        .nav {
+            width: 492px;
+        }
+        .nav.fullscreen {
+            margin-left: -492px;
+        }
+        .nav-left {
+            width: 100px;
+        }
+    }
+    
+    
+    @media screen and (max-width: 1024px) {
+        .nav {
+            width: 492px;
+            margin-left: -492px
+        }
+        .nav.fullscreen {
+            margin-left: 0;
+        }
+    }
+    
+    @media screen and (max-width: 426px) {
+        .nav {
+            width: 100%;
+        }
+        .nav-left {
+            width: 100%;
+        }
+    }
+    
+    
+    .nav-right .title-list nav a .post-title, .nav-right .title-list #local-search-result a .post-title {
+        color: #383636;
+    }
+    
+    
+    .nav-right .title-list nav a .post-date, .nav-right .title-list #local-search-result a .post-date {
+        color: #5e5e5f;
+    }
+    
+    
+    .nav-right nav a.hover, #local-search-result a.hover{
+        background-color: #e2e0e0;
+    }
+    
+    
+
+    /*列表样式*/
+    
+
+    /* 背景图样式 */
+    
+    
+
+
+    /*引用块样式*/
+    
+
+    /*文章列表背景图*/
+    
+
+    
+</style>
+
+
+
+
+
+
+
+</html>

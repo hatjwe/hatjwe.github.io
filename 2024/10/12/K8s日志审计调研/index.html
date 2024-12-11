@@ -6,25 +6,24 @@
   <meta name="keywords" content=" 日志审计 ">
   <meta name="description" content="k8s日志审计调研 | Hexo">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-<meta name="description" content="最近在安全平台开发过程中，希望使开发流程更加规范和自动化。于是了解了下CI&#x2F;CD相关知识。 CI&#x2F;CD Pipeline简单介绍下CI&#x2F;CD Pipeline，提到DevOps，很多人就想到了CI&#x2F;CD Pipeline，甚至很多个人或者企业认为完成了CI&#x2F;CD Pipeline就等于实现了DevOps。Pipeline 指管道或者流水线，类似于工">
+<meta name="description" content="镜像扫描产品调研，扫描能力分析。 syft镜像扫描流程分析 SyftCLI工具和Go库，用于从容器映像和文件系统生成软件BOM表（SBOM）与grype结合使用进行漏洞扫描。可以通过单独的Syft生成SBOM清单，也可以通过grype扫描镜像漏洞。grype对容器内文件、依赖扫描方式是通过syft，接下来是相关流程。 镜像解析1.1数据预处理我们主要的输入源为path&#x2F;to&#x2F;i">
 <meta property="og:type" content="article">
-<meta property="og:title" content="DevOps实践-gitlab CI集成">
-<meta property="og:url" content="http://example.com/2024/11/19/DevOps%E5%AE%9E%E8%B7%B5-CI/index.html">
+<meta property="og:title" content="镜像扫描-syft分析">
+<meta property="og:url" content="http://example.com/2024/12/11/%E9%95%9C%E5%83%8F%E6%89%AB%E6%8F%8F-syft/index.html">
 <meta property="og:site_name" content="Hexo">
-<meta property="og:description" content="最近在安全平台开发过程中，希望使开发流程更加规范和自动化。于是了解了下CI&#x2F;CD相关知识。 CI&#x2F;CD Pipeline简单介绍下CI&#x2F;CD Pipeline，提到DevOps，很多人就想到了CI&#x2F;CD Pipeline，甚至很多个人或者企业认为完成了CI&#x2F;CD Pipeline就等于实现了DevOps。Pipeline 指管道或者流水线，类似于工">
+<meta property="og:description" content="镜像扫描产品调研，扫描能力分析。 syft镜像扫描流程分析 SyftCLI工具和Go库，用于从容器映像和文件系统生成软件BOM表（SBOM）与grype结合使用进行漏洞扫描。可以通过单独的Syft生成SBOM清单，也可以通过grype扫描镜像漏洞。grype对容器内文件、依赖扫描方式是通过syft，接下来是相关流程。 镜像解析1.1数据预处理我们主要的输入源为path&#x2F;to&#x2F;i">
 <meta property="og:locale" content="en_US">
-<meta property="og:image" content="https://prefect12.oss-cn-beijing.aliyuncs.com/11-19-1.png">
-<meta property="og:image" content="https://prefect12.oss-cn-beijing.aliyuncs.com/11-19-2.jpg">
-<meta property="og:image" content="https://prefect12.oss-cn-beijing.aliyuncs.com/11-19-5.jpg">
-<meta property="og:image" content="https://prefect12.oss-cn-beijing.aliyuncs.com/11-19-7.jpg">
-<meta property="og:image" content="https://prefect12.oss-cn-beijing.aliyuncs.com/11-19-9.png">
-<meta property="og:image" content="https://prefect12.oss-cn-beijing.aliyuncs.com/11-19-11.png">
-<meta property="article:published_time" content="2024-11-19T03:29:00.386Z">
-<meta property="article:modified_time" content="2024-11-19T06:11:31.833Z">
+<meta property="og:image" content="https://prefect12.oss-cn-beijing.aliyuncs.com/12-11-6.png">
+<meta property="og:image" content="https://s3.bmp.ovh/imgs/2023/01/10/be8498acf3704785.png">
+<meta property="og:image" content="https://s3.bmp.ovh/imgs/2023/01/12/5d418f49e7cd4b72.png">
+<meta property="og:image" content="https://s3.bmp.ovh/imgs/2023/01/12/1a5260496840ce69.png">
+<meta property="og:image" content="https://s3.bmp.ovh/imgs/2023/01/12/0b56029ba0be35c9.png">
+<meta property="article:published_time" content="2024-12-11T06:25:00.605Z">
+<meta property="article:modified_time" content="2024-12-11T06:26:57.155Z">
 <meta property="article:author" content="hatjwe">
-<meta property="article:tag" content="CI&#x2F;CD工具">
+<meta property="article:tag" content="镜像扫描">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="https://prefect12.oss-cn-beijing.aliyuncs.com/11-19-1.png">
+<meta name="twitter:image" content="https://prefect12.oss-cn-beijing.aliyuncs.com/12-11-6.png">
 
 
 <link rel="icon" href="/img/avatar1.jpg">
@@ -87,7 +86,7 @@
     <li>
         <div class="all active" data-rel="All">All
             
-                <small>(7)</small>
+                <small>(9)</small>
             
         </div>
     </li>
@@ -99,7 +98,7 @@
         <div data-rel="云原生">
             <i class="fold iconfont icon-right"></i>
             云原生
-            <small>(2)</small>
+            <small>(4)</small>
         </div>
         
             <ul class="sub hide">
@@ -225,7 +224,7 @@
         
     </div>
 </div>
-<input type="hidden" id="yelog_site_posts_number" value="7">
+<input type="hidden" id="yelog_site_posts_number" value="9">
 
 <div style="display: none">
     <span id="busuanzi_value_site_uv"></span>
@@ -270,6 +269,10 @@
     <div class="tag-wrapper">
         
             <li class="article-tag-list-item">
+                <i class="iconfont icon-tag"></i><a>镜像扫描</a>
+            </li>
+        
+            <li class="article-tag-list-item">
                 <i class="iconfont icon-tag"></i><a>日志审计</a>
             </li>
         
@@ -295,6 +298,24 @@
 
     
     <nav id="title-list-nav">
+        
+        
+        <a  class="All 云原生 "
+           href="/2024/12/11/%E9%95%9C%E5%83%8F%E6%89%AB%E6%8F%8F-syft/"
+           data-tag="镜像扫描"
+           data-author="" >
+            <span class="post-title" title="镜像扫描-syft分析">镜像扫描-syft分析</span>
+            <span class="post-date" title="2024-12-11 14:25:00">2024/12/11</span>
+        </a>
+        
+        
+        <a  class="All 云原生 "
+           href="/2024/12/11/%E9%95%9C%E5%83%8F%E6%89%AB%E6%8F%8F-trivy/"
+           data-tag="镜像扫描"
+           data-author="" >
+            <span class="post-title" title="镜像扫描-trivy分析">镜像扫描-trivy分析</span>
+            <span class="post-date" title="2024-12-11 14:12:46">2024/12/11</span>
+        </a>
         
         
         <a  class="All DevOps "
