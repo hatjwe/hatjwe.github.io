@@ -2,9 +2,9 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Hexo</title>
-  <meta name="keywords" content="">
-  <meta name="description" content="Hexo">
+  <title>云源码泄露点分析 | Hexo</title>
+  <meta name="keywords" content=" agc ">
+  <meta name="description" content="云源码泄露点分析 | Hexo">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 <meta name="description" content="agc测试&#x3D;日常工作中有处理一些APK文件，在进行反编译过程中，一般资源配置文件都不加密的，会有很多appid等字段，于是对hwagc服务进行一些调研，查看是否有类似AK&#x2F;SK泄露这种风险点，梳理下agc相关流程。 凭证AGC整个服务中比较关键的就是凭证，凭证分为两类：项目级别凭证 以及团队凭证 团队级凭证1.通过设置角色，来细化某个凭证权限，通过下载可以下载出agc-apic">
 <meta property="og:type" content="article">
@@ -69,7 +69,7 @@
 
 
 <body>
-<aside class="nav mobile">
+<aside class="nav">
     <div class="nav-left">
         <a href="/"
    class="avatar_target">
@@ -458,18 +458,66 @@
 
     </div>
     <div class="hide-list">
-        <div class="semicircle" data-title="切换全屏 快捷键 s">
+        <div class="semicircle" data-title="Toggle full screen shortcut key s">
             <div class="brackets first"><</div>
             <div class="brackets">&gt;</div>
         </div>
     </div>
 </aside>
-<div id="post" class="index">
+<div id="post">
     <div class="pjax">
-        <article class="index">
-            <div class="toc-ref">
+        <article id="post-云泄露" class="article article-type-post" itemscope itemprop="blogPost">
     
+        <h1 class="article-title">云源码泄露点分析</h1>
+    
+    <div class="article-meta">
         
+        
+        
+        <span class="book">
+            <i class="iconfont icon-category"></i>
+            
+            
+            <a  data-rel="云安全">云安全</a> > 
+            
+            <a  data-rel="云安全&lt;---&gt;源码泄露">源码泄露</a>
+            
+        </span>
+        
+        
+        <span class="tag">
+            <i class="iconfont icon-tag"></i>
+            
+            <a class="color4">agc</a>
+            
+        </span>
+        
+    </div>
+    <div class="article-meta">
+        
+            Created At : <time class="date" title='Updated At: 2025-01-16 16:51:51'>2025-01-16 16:47</time>
+        
+    </div>
+    <div class="article-meta">
+        
+        
+        <span id="busuanzi_container_page_pv">
+            Views 👀 :<span id="busuanzi_value_page_pv">
+                <span class="count-comment">
+                    <span class="spinner">
+                      <div class="cube1"></div>
+                      <div class="cube2"></div>
+                    </span>
+                </span>
+            </span>
+        </span>
+        
+        
+    </div>
+    
+    <div class="toc-ref">
+    
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#agc%E6%B5%8B%E8%AF%95"><span class="toc-text">agc测试</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%87%AD%E8%AF%81"><span class="toc-text">凭证</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%9B%A2%E9%98%9F%E7%BA%A7%E5%87%AD%E8%AF%81"><span class="toc-text">团队级凭证</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%A1%B9%E7%9B%AE%E7%BA%A7%E5%87%AD%E8%AF%81"><span class="toc-text">项目级凭证</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%BA%94%E7%94%A8%E5%87%AD%E8%AF%81"><span class="toc-text">应用凭证</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#SDK%E6%9C%8D%E5%8A%A1%E5%87%AD%E8%AF%81"><span class="toc-text">SDK服务凭证</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%A1%B5%E9%9D%A2%E7%9A%84%E5%80%BC"><span class="toc-text">页面的值</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%89%8D%E7%BD%AEToken"><span class="toc-text">前置Token</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#token%E8%8E%B7%E5%8F%96"><span class="toc-text">token获取</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#token%E4%BD%9C%E7%94%A8"><span class="toc-text">token作用</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%9A%E5%8A%A1%E5%88%A9%E7%94%A8%E7%82%B9"><span class="toc-text">业务利用点</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%8E%A8%E9%80%81%E6%9C%8D%E5%8A%A1%EF%BC%88%E6%97%A0%E6%B3%95%E5%88%A9%E7%94%A8%EF%BC%89"><span class="toc-text">推送服务（无法利用）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%88%A9%E7%94%A8%E6%9D%A1%E4%BB%B6"><span class="toc-text">利用条件</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%BB%93%E8%AE%BA"><span class="toc-text">结论</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%91%E5%82%A8%E5%AD%98%EF%BC%88%E5%8F%AF%E4%BB%A5%E5%88%A9%E7%94%A8%EF%BC%89"><span class="toc-text">云储存（可以利用）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%88%A9%E7%94%A8%E6%9D%A1%E4%BB%B6-1"><span class="toc-text">利用条件</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#SDK%E6%9C%8D%E5%8A%A1%E5%87%AD%E8%AF%81-1"><span class="toc-text">SDK服务凭证</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#bucket%E5%90%8D%E7%A7%B0"><span class="toc-text">bucket名称</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%BB%93%E8%AE%BA-1"><span class="toc-text">结论</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%91%E6%95%B0%E6%8D%AE%E5%BA%93-%E6%97%A0%E6%B3%95%E5%88%A9%E7%94%A8"><span class="toc-text">云数据库(无法利用)</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%88%A9%E7%94%A8%E6%9D%A1%E4%BB%B6-2"><span class="toc-text">利用条件</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%BB%93%E8%AE%BA-2"><span class="toc-text">结论</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%91%E7%BC%93%E5%AD%98%EF%BC%88%E6%97%A0%E6%B3%95%E5%88%A9%E7%94%A8%EF%BC%89"><span class="toc-text">云缓存（无法利用）</span></a></li></ol></li></ol>
     
 <style>
     .left-col .switch-btn,
@@ -482,11 +530,87 @@
     }
 </style>
 </div>
-            <p>- </p>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h1 id="agc测试"><a href="#agc测试" class="headerlink" title="agc测试"></a>agc测试</h1><p>&#x3D;日常工作中有处理一些APK文件，在进行反编译过程中，一般资源配置文件都不加密的，会有很多appid等字段，于是对hwagc服务进行一些调研，查看是否有类似AK&#x2F;SK泄露这种风险点，梳理下agc相关流程。</p>
+<h2 id="凭证"><a href="#凭证" class="headerlink" title="凭证"></a>凭证</h2><p>AGC整个服务中比较关键的就是凭证，<br>凭证分为两类：项目级别凭证 以及团队凭证</p>
+<h3 id="团队级凭证"><a href="#团队级凭证" class="headerlink" title="团队级凭证"></a>团队级凭证</h3><p>1.通过设置角色，来细化某个凭证权限，通过下载可以下载出agc-apiclient-.json，里边包含client_id，project_id，client_secret等。</p>
+<p><img src="https://prefect12.oss-cn-beijing.aliyuncs.com/25-1-9-6.png"></p>
+<h3 id="项目级凭证"><a href="#项目级凭证" class="headerlink" title="项目级凭证"></a>项目级凭证</h3><h4 id="应用凭证"><a href="#应用凭证" class="headerlink" title="应用凭证"></a>应用凭证</h4><p>1.项目级别凭证，一般是开发者某个应用需要使用一些业务创建的，这里比较直观，比如android就直接下载agconnect-services.json获取凭证，里边包含client_id，project_id，client_secret等。</p>
+<h4 id="SDK服务凭证"><a href="#SDK服务凭证" class="headerlink" title="SDK服务凭证"></a>SDK服务凭证</h4><p>2.客户端要操作某些服务，也可以通过ServerSDK来下载凭证，内容也包含client_id，project_id，client_secret等</p>
+<p><img src="https://prefect12.oss-cn-beijing.aliyuncs.com/25-1-9-8.png"></p>
+<p><img src="https://prefect12.oss-cn-beijing.aliyuncs.com/25-1-9-10.png"></p>
+<h2 id="页面的值"><a href="#页面的值" class="headerlink" title="页面的值"></a>页面的值</h2><table>
+<thead>
+<tr>
+<th>值</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>APPID</td>
+<td>应用凭证agconnect-services.json里</td>
+</tr>
+<tr>
+<td>ClientSecret</td>
+<td>应用凭证agconnect-services.json里</td>
+</tr>
+<tr>
+<td>ClientID</td>
+<td>应用凭证agconnect-services.json里</td>
+</tr>
+<tr>
+<td>API密钥（凭据）</td>
+<td>应用凭证agconnect-services.json里</td>
+</tr>
+<tr>
+<td>项目ID</td>
+<td>应用凭证agconnect-services.json里</td>
+</tr>
+<tr>
+<td>验证公钥</td>
+<td>AppGallery Connect的服务器给您的服务器发送请求时，使用该公钥验证我们服务器的签名。比如，您的应用商品在AppGallery直接销售，用户购买完成后，我们会通知您的服务器，您需要通过公钥验证请求后再发货给用户。</td>
+</tr>
+</tbody></table>
+<h2 id="前置Token"><a href="#前置Token" class="headerlink" title="前置Token"></a>前置Token</h2><h3 id="token获取"><a href="#token获取" class="headerlink" title="token获取"></a>token获取</h3><p>1.前置token如何获取，这就跟上边的凭证有联系了，我们上边可以看出每个凭证都是带了client_id，project_id，client_secret等信息的，那么携带不同权限的凭证通过接口申请token，自然就会申请出不同权限的前置token</p>
+<h3 id="token作用"><a href="#token作用" class="headerlink" title="token作用"></a>token作用</h3><p>1.前置token，主要运用于客户端需要进行一些业务操作时，当我们用Server SDK或者Rest API发送请求操作业务时，请求头里基本上都要带上这个token。</p>
+<p>比如如下操作云储存,很多业务类似。他都需要在请求时携带一个前置token，才能去操作业务。</p>
+<p><img src="https://prefect12.oss-cn-beijing.aliyuncs.com/25-1-9-2.png" alt="yu"></p>
+<h2 id="业务利用点"><a href="#业务利用点" class="headerlink" title="业务利用点"></a>业务利用点</h2><p>根据相关文档，选择比较有利用价值的，主要对一下几个业务进行测试<br>1.推送服务<br>2.云数据库<br>3.云存储<br>4.云缓存</p>
+<h2 id="推送服务（无法利用）"><a href="#推送服务（无法利用）" class="headerlink" title="推送服务（无法利用）"></a>推送服务（无法利用）</h2><p><img src="https://prefect12.oss-cn-beijing.aliyuncs.com/25-1-9-11.png"></p>
+<h3 id="利用条件"><a href="#利用条件" class="headerlink" title="利用条件"></a>利用条件</h3><p>1.client_id</p>
+<p>2.client_secret </p>
+<p>3.安卓APK返回的token</p>
+<h3 id="结论"><a href="#结论" class="headerlink" title="结论"></a>结论</h3><p>需要的client_id和client_secret 会硬编码在代码里，但安卓APK的token，这个不一定硬编码在配置文件中，所以无法利用。</p>
+<h2 id="云储存（可以利用）"><a href="#云储存（可以利用）" class="headerlink" title="云储存（可以利用）"></a>云储存（可以利用）</h2><h3 id="利用条件-1"><a href="#利用条件-1" class="headerlink" title="利用条件"></a>利用条件</h3><p>1.client_id<br>2.client_secret<br>3.bucket名称<br>4.productId<br>通过上述四个条件可以操作bucket里的文件</p>
+<h3 id="SDK服务凭证-1"><a href="#SDK服务凭证-1" class="headerlink" title="SDK服务凭证"></a>SDK服务凭证</h3><p>.client_id和client_secret  要用SDK服务凭证文件中的不然的话是无法调用的</p>
+<p><img src="https://prefect12.oss-cn-beijing.aliyuncs.com/25-1-9-15.png"></p>
+<h3 id="bucket名称"><a href="#bucket名称" class="headerlink" title="bucket名称"></a>bucket名称</h3><p>bucket名称获取，这里主要看应用凭证部分，测试中发现如果我开通了云存储，那么应用凭证里agconnect-services.json 会更新加入云存储相关部分信息,且我发现这个实例好像就默认一个，还无法新增了。</p>
+<p><img src="https://prefect12.oss-cn-beijing.aliyuncs.com/25-1-9-18.png"><br><img src="https://prefect12.oss-cn-beijing.aliyuncs.com/25-1-9-21.png"><br><img src="https://prefect12.oss-cn-beijing.aliyuncs.com/25-1-9-20.png"></p>
+<h3 id="结论-1"><a href="#结论-1" class="headerlink" title="结论"></a>结论</h3><p>需要的client_id和client_secret 是SDKserver凭证的文件值，productId 是应用凭证泄露的值，需要满足他们泄露硬编码在代码里，那么我们反编译后如果他开通云储存了，就可以通过服务端接口去调用操作了</p>
+<h2 id="云数据库-无法利用"><a href="#云数据库-无法利用" class="headerlink" title="云数据库(无法利用)"></a>云数据库(无法利用)</h2><h3 id="利用条件-2"><a href="#利用条件-2" class="headerlink" title="利用条件"></a>利用条件</h3><p>1.client_id<br>2.client_secret<br>3.对象名称&#x2F;存储区域</p>
+<p>Server端代码可知，我们操作是需要一个存储区域名称的</p>
+<p><img src="https://prefect12.oss-cn-beijing.aliyuncs.com/25-1-9-23.png"></p>
+<h3 id="结论-2"><a href="#结论-2" class="headerlink" title="结论"></a>结论</h3><p>需要的client_id和client_secret 会硬编码在代码里，对象名称&#x2F;存储区域拿不到，在安卓APK的凭证文件里没有新增</p>
+<h2 id="云缓存（无法利用）"><a href="#云缓存（无法利用）" class="headerlink" title="云缓存（无法利用）"></a>云缓存（无法利用）</h2><p>开通服务也没有像云存储一样，把密码啥的写入凭证，所以没法利用<br><img src="https://prefect12.oss-cn-beijing.aliyuncs.com/25-1-9-30.png"></p>
 
-        </article>
-        
-        
+      
+       <hr><span style="font-style: italic;color: gray;"> 转载请注明来源. </span>
+    </div>
+</article>
+
+
+
+
+
+
+
+    
+
+
+
+
     </div>
     <div class="copyright">
         <p class="footer-entry">
@@ -495,11 +619,11 @@
 
 
     </div>
-</div>
-<div class="full-toc">
-    <button class="full" data-title="Toggle full screen shortcut key s"><span class="min "></span></button>
+    <div class="full-toc">
+        <button class="full" data-title="Toggle full screen shortcut key s"><span class="min "></span></button>
 <a class="" id="rocket" ></a>
 
+    </div>
 </div>
 
 </body>
